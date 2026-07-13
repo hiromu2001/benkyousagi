@@ -53,8 +53,7 @@ model Rabbit {
   user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   name              String      @default("おもち")
   ribbonColor       RibbonColor @default(CREAM)
-  energy            Int         @default(60) // 0-100
-  energyUpdatedAt   DateTime    @default(now())
+  energy            Int         @default(60) // 0-100。lastSessionEndAt 時点の確定値（減衰は読み取り時に computeCurrentEnergy() で計算）
   lastSessionEndAt  DateTime?
 
   createdAt DateTime @default(now())
@@ -70,6 +69,13 @@ model StudySession {
   timerType TimerType
   startedAt DateTime
   endedAt   DateTime?
+
+  // 3-3-1節: 無操作自動停止・異常終了救済のためのハートビート。
+  // クライアントは「計測中」の間、一定間隔でこれを更新する（一時停止中は更新しない＝停止した時点の値で凍結）。
+  // 次回起動時、endedAt が null かつ lastHeartbeatAt が古すぎるセッションを検知し、
+  // accumulatedSeconds を実勉強時間として RECOVERED 確定する。
+  lastHeartbeatAt    DateTime @default(now())
+  accumulatedSeconds Int      @default(0)
 
   // 実勉強時間（休憩・スキップ分・無操作猶予分を除いた確定時間）。
   // セッション進行中は null、確定時に秒数を書き込む。
