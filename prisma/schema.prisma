@@ -1,6 +1,7 @@
 // benkyousagi データモデル
 // 参照: docs/REQUIREMENTS.md 6章「データモデル概略」
-// 開発環境は SQLite。本番はホスティング先に応じて datasource を差し替える想定（Prisma のため provider 変更のみで移行可能）。
+// provider は開発・本番とも "sqlite" のまま。本番は無課金の Turso(libSQL, SQLite互換)を
+// アダプタ経由で使う想定のため、schema側の変更は不要(接続先の切り替えは src/lib/db.ts と環境変数のみ)。
 
 generator client {
   provider = "prisma-client-js"
