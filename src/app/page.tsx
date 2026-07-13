@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/dal";
 import {
   computeCurrentEnergy,
@@ -32,6 +33,10 @@ export default async function Home() {
         <p className="text-charcoal">うさぎの じゅんび中だよ。すこし まってね。</p>
       </main>
     );
+  }
+
+  if (!rabbit.onboardedAt) {
+    redirect("/onboarding");
   }
 
   const energy = computeCurrentEnergy(rabbit.energy, rabbit.lastSessionEndAt);

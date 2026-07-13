@@ -55,6 +55,7 @@ model Rabbit {
   ribbonColor       RibbonColor @default(CREAM)
   energy            Int         @default(60) // 0-100。lastSessionEndAt 時点の確定値（減衰は読み取り時に computeCurrentEnergy() で計算）
   lastSessionEndAt  DateTime?
+  onboardedAt       DateTime? // nullの間は初回オンボーディング(命名・リボン色・世界観説明)を表示する
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

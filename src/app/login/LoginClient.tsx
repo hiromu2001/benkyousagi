@@ -17,8 +17,8 @@ export type LoginUser = {
   } | null;
 };
 
-const MIN_PIN_LENGTH = 4;
-const MAX_PIN_LENGTH = 6;
+// 2アカウント固定運用のため、PIN桁数も6桁固定にしている(表示・自動ログインの一貫性のため)。
+const PIN_LENGTH = 6;
 
 function ribbonHexOf(user: LoginUser): string {
   return RIBBON_COLOR_HEX[user.rabbit?.ribbonColor ?? "CREAM"];
@@ -33,7 +33,7 @@ export function LoginClient({ users }: { users: LoginUser[] }) {
   const submit = useCallback(
     (pinValue: string) => {
       if (!selectedUser || isPending) return;
-      if (pinValue.length < MIN_PIN_LENGTH) return;
+      if (pinValue.length < PIN_LENGTH) return;
 
       setError(null);
       startTransition(async () => {
@@ -49,10 +49,10 @@ export function LoginClient({ users }: { users: LoginUser[] }) {
 
   const handlePinChange = useCallback(
     (next: string) => {
-      if (next.length > MAX_PIN_LENGTH) return;
+      if (next.length > PIN_LENGTH) return;
       setError(null);
       setPin(next);
-      if (next.length === MAX_PIN_LENGTH) {
+      if (next.length === PIN_LENGTH) {
         submit(next);
       }
     },
@@ -78,7 +78,7 @@ export function LoginClient({ users }: { users: LoginUser[] }) {
     function onKeyDown(e: KeyboardEvent) {
       if (/^[0-9]$/.test(e.key)) {
         e.preventDefault();
-        handlePinChange(pin.length < MAX_PIN_LENGTH ? pin + e.key : pin);
+        handlePinChange(pin.length < PIN_LENGTH ? pin + e.key : pin);
       } else if (e.key === "Backspace") {
         e.preventDefault();
         handlePinChange(pin.slice(0, -1));
@@ -153,7 +153,7 @@ export function LoginClient({ users }: { users: LoginUser[] }) {
             </div>
 
             <div className="flex gap-3">
-              {Array.from({ length: Math.max(pin.length, MIN_PIN_LENGTH) }).map((_, i) => (
+              {Array.from({ length: PIN_LENGTH }).map((_, i) => (
                 <span
                   key={i}
                   className={clsx(
@@ -174,16 +174,17 @@ export function LoginClient({ users }: { users: LoginUser[] }) {
               {error}
             </div>
 
-            <PinPad value={pin} maxLength={MAX_PIN_LENGTH} disabled={isPending} onChange={handlePinChange} />
+            <PinPad value={pin} maxLength={PIN_LENGTH} disabled={isPending} onChange={handlePinChange} />
 
-            <button
-              type="button"
-              onClick={() => submit(pin)}
-              disabled={pin.length < MIN_PIN_LENGTH || isPending}
-              className="w-full max-w-xs rounded-2xl bg-apricot py-3 text-base font-bold text-charcoal shadow-sm transition-transform active:scale-95 disabled:opacity-40"
+            {/* 6桁で自動ログインするため手動送信ボタンは置かず、進行中だけ静かに知らせる */}
+            <p
+              className={clsx(
+                "h-5 text-sm text-charcoal-soft transition-opacity",
+                isPending ? "opacity-100" : "opacity-0",
+              )}
             >
-              {isPending ? "まっててね…" : "ログインする"}
-            </button>
+              まっててね…
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
