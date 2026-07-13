@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/dal";
+import { computeCurrentEnergy } from "@/lib/rabbit-status";
 import { NameEditClient } from "./NameEditClient";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
+  const energy = user.rabbit ? computeCurrentEnergy(user.rabbit.energy, user.rabbit.lastSessionEndAt) : 60;
 
   return (
     <main className="flex flex-1 flex-col items-center px-4 py-10 sm:py-14">
@@ -20,6 +22,8 @@ export default async function SettingsPage() {
         <NameEditClient
           initialRabbitName={user.rabbit?.name ?? ""}
           initialDisplayName={user.displayName}
+          initialRibbonColor={user.rabbit?.ribbonColor ?? "CREAM"}
+          energy={energy}
         />
 
         <Link

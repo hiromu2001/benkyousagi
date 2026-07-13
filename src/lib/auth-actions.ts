@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { createSession, deleteSession } from "@/lib/session";
 import { getCurrentUser } from "@/lib/dal";
+import { RibbonColor } from "@/generated/prisma";
 
 function isUniqueConstraintError(error: unknown): boolean {
   return (
@@ -31,6 +32,13 @@ const loginInputSchema = z.object({
 function lockedMessage(lockedUntil: Date, now: Date): string {
   const remainMinutes = Math.max(1, Math.ceil((lockedUntil.getTime() - now.getTime()) / 60_000));
   return `ちょっとおやすみタイム。あと${remainMinutes}ふん まってね`;
+}
+
+// ロック期限が切れていれば、直前までの失敗回数は0として扱う。
+// でないとロック解除直後の1回の誤入力だけで、また5回分たまっていた扱いになり即再ロックしてしまう。
+function resolveFailedAttempts(failedPinAttempts: number, lockedUntil: Date | null, now: Date): number {
+  if (lockedUntil && lockedUntil <= now) return 0;
+  return failedPinAttempts;
 }
 
 export async function loginAction(
@@ -64,7 +72,7 @@ export async function loginAction(
   const isValid = await bcrypt.compare(parsed.data.pin, user.pinHash);
 
   if (!isValid) {
-    const nextFailedAttempts = user.failedPinAttempts + 1;
+    const nextFailedAttempts = resolveFailedAttempts(user.failedPinAttempts, user.lockedUntil, now) + 1;
 
     if (nextFailedAttempts >= MAX_FAILED_ATTEMPTS) {
       const lockedUntil = new Date(now.getTime() + LOCK_DURATION_MS);
@@ -128,6 +136,21 @@ export async function changePinAction(
 
   const isCurrentValid = await bcrypt.compare(currentPin, user.pinHash);
   if (!isCurrentValid) {
+    const nextFailedAttempts = resolveFailedAttempts(user.failedPinAttempts, user.lockedUntil, now) + 1;
+
+    if (nextFailedAttempts >= MAX_FAILED_ATTEMPTS) {
+      const lockedUntil = new Date(now.getTime() + LOCK_DURATION_MS);
+      await db.user.update({
+        where: { id: user.id },
+        data: { failedPinAttempts: nextFailedAttempts, lockedUntil },
+      });
+      return { error: lockedMessage(lockedUntil, now) };
+    }
+
+    await db.user.update({
+      where: { id: user.id },
+      data: { failedPinAttempts: nextFailedAttempts },
+    });
     return { error: "いまのPINが ちがうみたい" };
   }
 
@@ -142,10 +165,12 @@ export async function changePinAction(
 
 // onboarding-actions.ts の completeOnboardingAction と同じ桁数制限(10もじ)に揃えている。
 const MAX_NAME_LENGTH = 10;
+const VALID_RIBBON_COLORS = Object.values(RibbonColor);
 
 export async function updateNamesAction(
   rabbitName: string,
   displayName: string,
+  ribbonColor: RibbonColor,
 ): Promise<{ error?: string; success?: true }> {
   const user = await getCurrentUser();
 
@@ -159,22 +184,25 @@ export async function updateNamesAction(
     return { error: "あなたの なまえを いれてね" };
   }
 
+  const finalRibbonColor = VALID_RIBBON_COLORS.includes(ribbonColor) ? ribbonColor : RibbonColor.CREAM;
+
   try {
-    await db.user.update({
-      where: { id: user.id },
-      data: { displayName: trimmedDisplayName },
-    });
+    await db.$transaction([
+      db.user.update({
+        where: { id: user.id },
+        data: { displayName: trimmedDisplayName },
+      }),
+      db.rabbit.update({
+        where: { userId: user.id },
+        data: { name: trimmedRabbitName, ribbonColor: finalRibbonColor },
+      }),
+    ]);
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       return { error: "そのなまえは もうつかわれているみたい" };
     }
     throw error;
   }
-
-  await db.rabbit.update({
-    where: { userId: user.id },
-    data: { name: trimmedRabbitName },
-  });
 
   // 比較ウィジェットはホーム画面(src/app/page.tsx)にあるため、layout単位で再検証する。
   revalidatePath("/", "layout");

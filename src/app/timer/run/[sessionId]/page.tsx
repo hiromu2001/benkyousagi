@@ -21,22 +21,34 @@ function readPositiveInt(searchParams: SearchParams, key: string): number | null
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+type PersistedConfig = {
+  targetSeconds: number | null;
+  pomodoroWorkSeconds: number | null;
+  pomodoroShortBreakSeconds: number | null;
+  pomodoroLongBreakSeconds: number | null;
+  pomodoroSetsUntilLong: number | null;
+};
+
+// URLクエリは開始画面が組み立てた値(遷移直後のみ存在)。ホーム経由で離脱後に/timerの再開バナー等、
+// このURL無しで再訪した場合はDBに保存済みの開始時設定(persisted)にフォールバックする。
+// でないと設定を復元できず/timerへリダイレクトループしてしまう。
 function parseRunConfig(
   timerType: "COUNTUP" | "COUNTDOWN" | "POMODORO",
   searchParams: SearchParams,
+  persisted: PersistedConfig,
 ): RunConfig | null {
   if (timerType === "COUNTUP") {
     return { timerType: "COUNTUP" };
   }
   if (timerType === "COUNTDOWN") {
-    const targetSeconds = readPositiveInt(searchParams, "target");
+    const targetSeconds = readPositiveInt(searchParams, "target") ?? persisted.targetSeconds;
     if (!targetSeconds) return null;
     return { timerType: "COUNTDOWN", targetSeconds };
   }
-  const work = readPositiveInt(searchParams, "work");
-  const shortBreak = readPositiveInt(searchParams, "shortBreak");
-  const long = readPositiveInt(searchParams, "long");
-  const setsUntilLong = readPositiveInt(searchParams, "sets");
+  const work = readPositiveInt(searchParams, "work") ?? persisted.pomodoroWorkSeconds;
+  const shortBreak = readPositiveInt(searchParams, "shortBreak") ?? persisted.pomodoroShortBreakSeconds;
+  const long = readPositiveInt(searchParams, "long") ?? persisted.pomodoroLongBreakSeconds;
+  const setsUntilLong = readPositiveInt(searchParams, "sets") ?? persisted.pomodoroSetsUntilLong;
   if (!work || !shortBreak || !long || !setsUntilLong) return null;
   return { timerType: "POMODORO", work, shortBreak, long, setsUntilLong };
 }
@@ -77,7 +89,7 @@ export default async function TimerRunPage({
   if (session.endedAt) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-charcoal-soft">このセッションはすでに終了しています。</p>
+        <p className="text-charcoal-soft">このタイマーは もう おわってるみたい</p>
         <Link
           href="/"
           className="rounded-full bg-pink px-6 py-3 font-bold text-charcoal shadow-sm transition active:scale-95"
@@ -88,7 +100,7 @@ export default async function TimerRunPage({
     );
   }
 
-  const config = parseRunConfig(session.timerType, query);
+  const config = parseRunConfig(session.timerType, query, session);
   if (!config) {
     redirect("/timer");
   }

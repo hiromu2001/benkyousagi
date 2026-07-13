@@ -1,8 +1,9 @@
 import "server-only";
-import { startOfDay } from "date-fns";
+import { startOfJstDay } from "@/lib/jst";
 import { db } from "@/lib/db";
 import { EndReason } from "@/generated/prisma";
 import {
+  computeCurrentEnergy,
   energyAfterSessionStart,
   energyGainForDuration,
   clampEnergy,
@@ -48,8 +49,11 @@ export async function finalizeSession(
     const rabbit = await tx.rabbit.findUnique({ where: { userId } });
     if (rabbit) {
       // Rabbit.energy は「lastSessionEndAt時点の確定値」(schema.prisma参照)。
-      // 減衰は読み取り時のみ computeCurrentEnergy() で計算するため、ここでは生値をそのまま起点にする。
-      const afterStartBonus = energyAfterSessionStart(rabbit.energy);
+      // ここで生値をそのまま起点にすると、前回セッション終了からの減衰分が丸ごと消えてしまう
+      // (クライアント側の楽観的表示は開始時点の減衰後の値を起点に計算しているため食い違う)。
+      // セッション開始時刻(startedAt)時点まで減衰させた値を起点にする。
+      const baselineEnergy = computeCurrentEnergy(rabbit.energy, rabbit.lastSessionEndAt, session.startedAt);
+      const afterStartBonus = energyAfterSessionStart(baselineEnergy);
       const newEnergy = clampEnergy(afterStartBonus + energyGainForDuration(duration));
       await tx.rabbit.update({
         where: { userId },
@@ -58,7 +62,8 @@ export async function finalizeSession(
     }
 
     // 集計日はセッション開始日(startedAt)基準に統一する(src/lib/study-stats.tsの可視化側と揃える)。
-    const dateKey = startOfDay(session.startedAt);
+    // 日本時間(JST)基準の暦日境界を使う(src/lib/jst.ts参照。本番サーバーTZがUTCのため)。
+    const dateKey = startOfJstDay(session.startedAt);
     await tx.dailyAggregate.upsert({
       where: { userId_date: { userId, date: dateKey } },
       update: {

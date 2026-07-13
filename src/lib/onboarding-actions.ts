@@ -61,7 +61,7 @@ export async function completeOnboardingAction(
     },
   });
 
-  // 比較ウィジェットは root layout にあるため、ページ単位でなくレイアウト単位で再検証する。
+  // 比較ウィジェットはホーム画面(src/app/page.tsx)にあるため、layout単位で再検証する。
   revalidatePath("/", "layout");
   redirect("/");
 }

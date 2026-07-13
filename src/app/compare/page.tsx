@@ -88,7 +88,7 @@ export default async function ComparePage({
 
       {!partner ? (
         <p className="rounded-2xl border border-pink-deep/20 bg-milk p-4 text-center text-sm text-charcoal-soft">
-          まだふたりめのアカウントが登録されていません。
+          まだ ふたりめの アカウントが ないみたい
         </p>
       ) : (
         <>

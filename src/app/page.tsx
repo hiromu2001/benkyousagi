@@ -51,10 +51,18 @@ export default async function Home() {
   const stageLabel = ENERGY_STAGE_LABELS[stage];
   const message = STAGE_MESSAGES[stage];
 
-  // きょう(JST基準)のきぶんチェックイン。未回答ならピッカーを表示する。
-  const todayMood = await db.moodEntry.findUnique({
-    where: { userId_moodDate: { userId: user.id, moodDate: jstDateKey() } },
-  });
+  // きょう(JST基準)のきぶんチェックイン(未回答ならピッカーを表示)と、計測中セッションの有無を
+  // 並行して取得する。後者が無いと、ホームボタンでタイマー画面から離脱した後にセッションが
+  // 計測中であることに気づけない(REQUIREMENTS.md 4章: 計測状態が失われないこと、の体感を補強)。
+  const [todayMood, activeSession] = await Promise.all([
+    db.moodEntry.findUnique({
+      where: { userId_moodDate: { userId: user.id, moodDate: jstDateKey() } },
+    }),
+    db.studySession.findFirst({
+      where: { userId: user.id, endedAt: null },
+      select: { id: true },
+    }),
+  ]);
   const initialMoodLevel = asMoodLevel(todayMood?.level);
 
   return (
@@ -105,10 +113,10 @@ export default async function Home() {
         />
 
         <Link
-          href="/timer"
+          href={activeSession ? `/timer/run/${activeSession.id}` : "/timer"}
           className="mt-2 w-full rounded-full bg-apricot px-8 py-4 text-center text-lg font-bold text-charcoal shadow-md transition-transform active:scale-95 sm:hover:scale-[1.02]"
         >
-          タイマーをはじめる
+          {activeSession ? "つづきからはじめる" : "タイマーをはじめる"}
         </Link>
 
         <nav className="mt-2 flex gap-5 text-sm text-charcoal-soft">

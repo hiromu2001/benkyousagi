@@ -59,6 +59,12 @@ export async function startSessionAction(
       startedAt: now,
       lastHeartbeatAt: now,
       accumulatedSeconds: 0,
+      // 実行画面(run/[sessionId])がURLクエリ無しで再訪された場合の設定復元用に、開始時点の設定を保存する。
+      targetSeconds: timerType === TimerType.COUNTDOWN ? targetSeconds : null,
+      pomodoroWorkSeconds: timerType === TimerType.POMODORO ? pomodoroPreset!.work : null,
+      pomodoroShortBreakSeconds: timerType === TimerType.POMODORO ? pomodoroPreset!.shortBreak : null,
+      pomodoroLongBreakSeconds: timerType === TimerType.POMODORO ? pomodoroPreset!.long : null,
+      pomodoroSetsUntilLong: timerType === TimerType.POMODORO ? pomodoroPreset!.setsUntilLong : null,
       tags:
         ownedTagIds.length > 0
           ? { create: ownedTagIds.map((tagId) => ({ tagId })) }

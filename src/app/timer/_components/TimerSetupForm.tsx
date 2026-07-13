@@ -243,7 +243,7 @@ export default function TimerSetupForm({ initialTags }: { initialTags: TagItem[]
                     : "bg-milk/70 text-charcoal-soft hover:bg-pink/40",
                 )}
               >
-                {confirmDeleteTagId === tag.id ? "もう一度でけす" : "×"}
+                {confirmDeleteTagId === tag.id ? "ほんとに けす？" : "×"}
               </button>
             </span>
           ))}

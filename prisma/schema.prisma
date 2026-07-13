@@ -89,6 +89,15 @@ model StudySession {
   pomodoroSetsCompleted Int @default(0)
   breaksSkipped         Int @default(0)
 
+  // 開始時の設定(目標時間・ポモドーロプリセット)を確定させておく(タイマー種別ごとにCOUNTDOWN/POMODOROのみ使用)。
+  // それまでは開始画面が組み立てたURLクエリだけが値の出どころで、ホーム経由で離脱後に
+  // /timer の再開バナーからこのURL無しで再訪すると値を復元できずリダイレクトループしていた。
+  targetSeconds             Int? // カウントダウンの目標秒数
+  pomodoroWorkSeconds       Int?
+  pomodoroShortBreakSeconds Int?
+  pomodoroLongBreakSeconds  Int?
+  pomodoroSetsUntilLong     Int?
+
   tags StudySessionTag[]
 
   createdAt DateTime @default(now())

@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { format, parseISO, isValid } from "date-fns";
-import { ja } from "date-fns/locale";
 import { getCurrentUser } from "@/lib/dal";
 import {
   resolveRange,
@@ -10,6 +8,14 @@ import {
   type HistoryRange,
   type PeriodSummary,
 } from "@/lib/study-stats";
+import {
+  jstDateKey,
+  jstMidnightFromKey,
+  formatJstTime,
+  formatJstMonthDayJa,
+  formatJstYearMonth,
+  formatJstLongDate,
+} from "@/lib/jst";
 import { formatDurationShort } from "@/lib/format";
 import { RIBBON_COLOR_HEX, PALETTE } from "@/lib/theme";
 import TimeSeriesBarChart from "@/components/charts/TimeSeriesBarChart";
@@ -31,23 +37,23 @@ function parseRange(value: string | string[] | undefined): ViewRange {
 
 function parseReferenceDate(value: string | string[] | undefined): Date {
   const v = Array.isArray(value) ? value[0] : value;
-  if (!v) return new Date();
-  const parsed = parseISO(v);
-  return isValid(parsed) ? parsed : new Date();
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date();
+  const parsed = jstMidnightFromKey(v);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 function buildHref(range: ViewRange, date?: Date) {
   const params = new URLSearchParams({ range });
-  if (date) params.set("date", format(date, "yyyy-MM-dd"));
+  if (date) params.set("date", jstDateKey(date));
   return `/history?${params.toString()}`;
 }
 
 function periodLabel(range: HistoryRange, referenceDate: Date, start: Date, end: Date) {
-  if (range === "day") return format(referenceDate, "yyyy年M月d日(E)", { locale: ja });
+  if (range === "day") return formatJstLongDate(referenceDate);
   if (range === "week") {
-    return `${format(start, "M月d日", { locale: ja })}〜${format(end, "M月d日", { locale: ja })}`;
+    return `${formatJstMonthDayJa(start)}〜${formatJstMonthDayJa(end)}`;
   }
-  return format(referenceDate, "yyyy年M月", { locale: ja });
+  return formatJstYearMonth(referenceDate);
 }
 
 export default async function HistoryPage({
@@ -137,7 +143,7 @@ export default async function HistoryPage({
 
       {summary.totalSeconds === 0 ? (
         <p className="rounded-2xl border border-pink-deep/20 bg-milk p-4 text-center text-sm text-charcoal-soft">
-          {isAllTimeView ? "まだ記録がありません。" : "この期間の記録はまだありません。"}
+          {isAllTimeView ? "まだ きろくが ないみたい" : "この きかんの きろくは まだ ないみたい"}
         </p>
       ) : (
         <>
@@ -205,7 +211,7 @@ export default async function HistoryPage({
                     key={s.id}
                     className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl bg-pink/20 px-3 py-2 text-sm"
                   >
-                    <span className="text-charcoal-soft">{format(s.startedAt, "H:mm")}〜</span>
+                    <span className="text-charcoal-soft">{formatJstTime(s.startedAt)}〜</span>
                     <span className="font-bold text-charcoal">{formatDurationShort(s.durationSeconds ?? 0)}</span>
                     <span className="text-xs text-charcoal-soft">
                       {s.tags.length > 0 ? s.tags.map((t) => t.tag.name).join(" / ") : "タグなし"}

@@ -78,23 +78,28 @@ export default function MoodCheckInClient({
     if (isPending || phase !== "ask") return;
     setError(null);
     startTransition(async () => {
-      const result = await submitMoodAction(level);
-      if (result.status === "error") {
-        setError(result.message);
-        return;
+      try {
+        const result = await submitMoodAction(level);
+        if (result.status === "error") {
+          setError(result.message);
+          return;
+        }
+        setMood(result.level);
+        if (result.status === "already") {
+          // 別タブ等で回答済みだった場合。上書きせず、そのまま回答済み表示に切り替える。
+          setNotice(result.message);
+          setPhase("answered");
+          return;
+        }
+        // 回答成功: にんじんを食べる → ジャンプ+ハート → ひとこと、の順で見せる。
+        setJustAnswered(true);
+        setPhase("eating");
+        timersRef.current.push(window.setTimeout(() => setCelebrating(true), 900));
+        timersRef.current.push(window.setTimeout(() => setPhase("answered"), 1600));
+      } catch {
+        // submitMoodAction自体が(通信断等で)例外を投げた場合の保険。
+        setError("うまく とどかなかったみたい…もういちど ためしてね");
       }
-      setMood(result.level);
-      if (result.status === "already") {
-        // 別タブ等で回答済みだった場合。上書きせず、そのまま回答済み表示に切り替える。
-        setNotice(result.message);
-        setPhase("answered");
-        return;
-      }
-      // 回答成功: にんじんを食べる → ジャンプ+ハート → ひとこと、の順で見せる。
-      setJustAnswered(true);
-      setPhase("eating");
-      timersRef.current.push(window.setTimeout(() => setCelebrating(true), 900));
-      timersRef.current.push(window.setTimeout(() => setPhase("answered"), 1600));
     });
   }
 
@@ -137,84 +142,88 @@ export default function MoodCheckInClient({
 
       <p className="max-w-xs text-sm leading-relaxed text-charcoal-soft">{stageMessage}</p>
 
-      <AnimatePresence mode="wait" initial={false}>
-        {phase === "ask" && (
-          <motion.section
-            key="ask"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="w-full rounded-2xl border border-pink-deep/20 bg-milk p-4 shadow-sm"
-            aria-label="きょうのきぶんチェックイン"
-          >
-            <p className="text-sm font-bold text-charcoal">きょうの きぶんは どう？</p>
-            <p className="mt-1 text-[11px] text-charcoal-soft">
-              こたえると {rabbitName} に にんじんを あげられるよ
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {MOOD_LEVELS_DESC.map((level) => (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() => pick(level)}
-                  disabled={isPending}
-                  className={clsx(
-                    "rounded-2xl px-3 py-3 text-sm font-bold text-charcoal shadow-sm transition-transform active:scale-95 disabled:opacity-60 sm:hover:scale-[1.03]",
-                    MOOD_CONFIG[level].pickerClass,
-                  )}
-                >
-                  <span className="mr-1" aria-hidden>
-                    {MOOD_CONFIG[level].emoji}
-                  </span>
-                  {MOOD_CONFIG[level].label}
-                </button>
-              ))}
-            </div>
-            <p
-              role="alert"
-              className={clsx(
-                "mt-2 min-h-5 text-xs text-charcoal transition-opacity",
-                error ? "opacity-100" : "opacity-0",
-              )}
+      {/* min-hで最も背の高い"ask"状態ぶんの高さを確保し、"answered"に切り替わった時に
+          下のボタン群がガクッと詰まって見えるのを防ぐ(高さの近似値。厳密な計測はしていない)。 */}
+      <div className="flex w-full min-h-[180px] flex-col items-center justify-center">
+        <AnimatePresence mode="wait" initial={false}>
+          {phase === "ask" && (
+            <motion.section
+              key="ask"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="w-full rounded-2xl border border-pink-deep/20 bg-milk p-4 shadow-sm"
+              aria-label="きょうのきぶんチェックイン"
             >
-              {error}
-            </p>
-          </motion.section>
-        )}
+              <p className="text-sm font-bold text-charcoal">きょうの きぶんは どう？</p>
+              <p className="mt-1 text-[11px] text-charcoal-soft">
+                こたえると {rabbitName} に にんじんを あげられるよ
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {MOOD_LEVELS_DESC.map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => pick(level)}
+                    disabled={isPending}
+                    className={clsx(
+                      "rounded-2xl px-3 py-3 text-sm font-bold text-charcoal shadow-sm transition-transform active:scale-95 disabled:opacity-60 sm:hover:scale-[1.03]",
+                      MOOD_CONFIG[level].pickerClass,
+                    )}
+                  >
+                    <span className="mr-1" aria-hidden>
+                      {MOOD_CONFIG[level].emoji}
+                    </span>
+                    {MOOD_CONFIG[level].label}
+                  </button>
+                ))}
+              </div>
+              <p
+                role="alert"
+                className={clsx(
+                  "mt-2 min-h-5 text-xs text-charcoal transition-opacity",
+                  error ? "opacity-100" : "opacity-0",
+                )}
+              >
+                {error}
+              </p>
+            </motion.section>
+          )}
 
-        {phase === "eating" && (
-          <motion.p
-            key="eating"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="text-sm font-bold text-charcoal"
-          >
-            もぐもぐ……
-          </motion.p>
-        )}
+          {phase === "eating" && (
+            <motion.p
+              key="eating"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-sm font-bold text-charcoal"
+            >
+              もぐもぐ……
+            </motion.p>
+          )}
 
-        {phase === "answered" && mood !== null && (
-          <motion.section
-            key="answered"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="flex w-full flex-col items-center gap-2"
-          >
-            <span className="rounded-full bg-milk px-4 py-1.5 text-xs font-bold text-charcoal shadow-sm ring-1 ring-pink-deep/20">
-              きょうのきぶん{" "}
-              <span aria-hidden>{MOOD_CONFIG[mood].emoji}</span> {MOOD_CONFIG[mood].label}
-            </span>
-            <p className="text-xs leading-relaxed text-charcoal-soft">
-              {notice ?? (justAnswered ? MOOD_REPLIES[mood] : "また あした も きかせてね")}
-            </p>
-          </motion.section>
-        )}
-      </AnimatePresence>
+          {phase === "answered" && mood !== null && (
+            <motion.section
+              key="answered"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="flex w-full flex-col items-center gap-2"
+            >
+              <span className="rounded-full bg-milk px-4 py-1.5 text-xs font-bold text-charcoal shadow-sm ring-1 ring-pink-deep/20">
+                きょうのきぶん{" "}
+                <span aria-hidden>{MOOD_CONFIG[mood].emoji}</span> {MOOD_CONFIG[mood].label}
+              </span>
+              <p className="text-xs leading-relaxed text-charcoal-soft">
+                {notice ?? (justAnswered ? MOOD_REPLIES[mood] : "また あした も きかせてね")}
+              </p>
+            </motion.section>
+          )}
+        </AnimatePresence>
+      </div>
     </>
   );
 }

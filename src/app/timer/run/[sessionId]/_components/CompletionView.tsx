@@ -83,7 +83,7 @@ export default function CompletionView({
       </motion.div>
 
       <p className="text-xl font-bold text-charcoal">
-        {isRich ? "やったね!めあて達成!" : "がんばったね"}
+        {isRich ? "やったね！めあて たっせい！" : "がんばったね"}
       </p>
       <p className="text-charcoal-soft">
         きょうも{rabbitName}といっしょに、{formatMinutesLabel(durationMs)}がんばったよ

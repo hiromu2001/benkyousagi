@@ -24,29 +24,35 @@ export async function submitMoodAction(rawLevel: number): Promise<SubmitMoodResu
 
   const moodDate = jstDateKey();
 
-  const existing = await db.moodEntry.findUnique({
-    where: { userId_moodDate: { userId: user.id, moodDate } },
-  });
-  const existingLevel = asMoodLevel(existing?.level);
-  if (existingLevel !== null) {
-    return { status: "already", level: existingLevel, message: ALREADY_MESSAGE };
-  }
-
+  // DB往復(ネットワーク断等)を含めここから先で予期せず例外が飛んでも、素の例外を
+  // クライアントまで伝播させず(サーバーエラー画面になってしまう)、やさしいメッセージにして返す。
   try {
-    await db.moodEntry.create({
-      data: { userId: user.id, moodDate, level },
-    });
-  } catch {
-    // @@unique([userId, moodDate]) 競合(二重タップ等)時は先勝ちにして「もう答えたよ」を返す。
-    const raced = await db.moodEntry.findUnique({
+    const existing = await db.moodEntry.findUnique({
       where: { userId_moodDate: { userId: user.id, moodDate } },
     });
-    const racedLevel = asMoodLevel(raced?.level);
-    if (racedLevel !== null) {
-      return { status: "already", level: racedLevel, message: ALREADY_MESSAGE };
+    const existingLevel = asMoodLevel(existing?.level);
+    if (existingLevel !== null) {
+      return { status: "already", level: existingLevel, message: ALREADY_MESSAGE };
     }
+
+    try {
+      await db.moodEntry.create({
+        data: { userId: user.id, moodDate, level },
+      });
+    } catch {
+      // @@unique([userId, moodDate]) 競合(二重タップ等)時は先勝ちにして「もう答えたよ」を返す。
+      const raced = await db.moodEntry.findUnique({
+        where: { userId_moodDate: { userId: user.id, moodDate } },
+      });
+      const racedLevel = asMoodLevel(raced?.level);
+      if (racedLevel !== null) {
+        return { status: "already", level: racedLevel, message: ALREADY_MESSAGE };
+      }
+      return { status: "error", message: "うまく とどかなかったみたい…もういちど ためしてね" };
+    }
+
+    return { status: "created", level };
+  } catch {
     return { status: "error", message: "うまく とどかなかったみたい…もういちど ためしてね" };
   }
-
-  return { status: "created", level };
 }

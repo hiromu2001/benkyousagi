@@ -1,41 +1,34 @@
 import "server-only";
-import {
-  startOfDay,
-  endOfDay,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  isSameDay,
-  addDays,
-  addWeeks,
-  addMonths,
-  subDays,
-  format,
-} from "date-fns";
+import { addDays, addWeeks, addMonths } from "date-fns";
 import { db } from "@/lib/db";
 import { Prisma } from "@/generated/prisma";
+import {
+  jstDayRange,
+  jstWeekRange,
+  jstMonthRange,
+  jstTrailingDaysRange,
+  jstEachDayStart,
+  formatJstMonthDay,
+  isSameJstDay,
+  type DateRange as JstDateRange,
+} from "@/lib/jst";
 
-// 週の起点は月曜(REQUIREMENTS.md未規定のため実装裁量。ウィジェット・履歴・比較画面で統一)。
-const WEEK_STARTS_ON = 1 as const;
-
-export type DateRange = { start: Date; end: Date };
+export type DateRange = JstDateRange;
 export type HistoryRange = "day" | "week" | "month";
 
+// 日付境界は日本時間(Asia/Tokyo)基準にそろえる(jst.ts参照。本番サーバーTZがUTCのため、
+// date-fnsのstartOfDay等のサーバーローカルTZ基準をそのまま使うと最大9時間ずれる)。
 export function dayRange(reference: Date): DateRange {
-  return { start: startOfDay(reference), end: endOfDay(reference) };
+  return jstDayRange(reference);
 }
 
+// 週の起点は月曜(REQUIREMENTS.md未規定のため実装裁量。ウィジェット・履歴・比較画面で統一)。
 export function weekRange(reference: Date): DateRange {
-  return {
-    start: startOfWeek(reference, { weekStartsOn: WEEK_STARTS_ON }),
-    end: endOfWeek(reference, { weekStartsOn: WEEK_STARTS_ON }),
-  };
+  return jstWeekRange(reference);
 }
 
 export function monthRange(reference: Date): DateRange {
-  return { start: startOfMonth(reference), end: endOfMonth(reference) };
+  return jstMonthRange(reference);
 }
 
 export function resolveRange(range: HistoryRange, reference: Date): DateRange {
@@ -44,6 +37,9 @@ export function resolveRange(range: HistoryRange, reference: Date): DateRange {
   return monthRange(reference);
 }
 
+// reference は常にJST深夜0時にそろえた実時刻として渡ってくる前提。JSTは年間+09:00固定(DST無し)
+// なので、date-fnsのaddDays/addWeeks/addMonths(サーバーローカルTZ基準の暦計算)で日/週/月を
+// 移動しても、UTC等の固定オフセットサーバーであればJST深夜0時のそろえは崩れない。
 export function shiftReference(range: HistoryRange, reference: Date, direction: 1 | -1): Date {
   if (range === "day") return addDays(reference, direction);
   if (range === "week") return addWeeks(reference, direction);
@@ -53,7 +49,7 @@ export function shiftReference(range: HistoryRange, reference: Date, direction: 
 // 当日を含む直近 N 日間。比較詳細画面の「30日間」トレンドのように、
 // カレンダー境界ではなく常に今日で終わるローリング窓が欲しい場面で使う。
 export function trailingDaysRange(days: number, now: Date = new Date()): DateRange {
-  return { start: startOfDay(subDays(now, days - 1)), end: endOfDay(now) };
+  return jstTrailingDaysRange(days, now);
 }
 
 const sessionSelect = {
@@ -151,12 +147,12 @@ export async function getPeriodSummary(userId: string, range: DateRange): Promis
   const sessions = await findConfirmedSessions(userId, range);
   const totalSeconds = sessions.reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0);
 
-  const days = eachDayOfInterval({ start: range.start, end: range.end });
+  const days = jstEachDayStart(range);
   const dailyBreakdown: DailyPoint[] = days.map((date) => ({
     date,
-    label: format(date, "M/d"),
+    label: formatJstMonthDay(date),
     totalSeconds: sessions
-      .filter((s) => isSameDay(s.startedAt, date))
+      .filter((s) => isSameJstDay(s.startedAt, date))
       .reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0),
   }));
 
