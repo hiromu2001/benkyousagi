@@ -197,12 +197,19 @@ export default function TimerRunClient({
     engineState.pendingEndReason,
   ]);
 
-  const liveStudySeconds = Math.floor(studyMsSoFar(engineState, nowMs) / 1000);
+  // 終了確定後は記録時間が固定されるため、元気度計算も確定値(pendingDurationMs)基準に固定する。
+  const liveStudySeconds =
+    engineState.endingPhase === "active"
+      ? Math.floor(studyMsSoFar(engineState, nowMs) / 1000)
+      : Math.round((engineState.pendingDurationMs ?? 0) / 1000);
   const optimisticEnergy = clampEnergy(
     energyAfterSessionStart(baselineEnergy) + energyGainForDuration(liveStudySeconds),
   );
 
-  if (engineState.endingPhase === "done") {
+  // 楽観的UI: サーバーでの確定(endSessionAction)を待たずに、終了操作の瞬間から完了画面を出す。
+  // 記録時間・元気度はクライアント側で同じ計算式により算出済みなので表示に不足はなく、
+  // DB確定は裏で進む(失敗しても上のリトライ+異常終了救済がセーフティネットになる)。
+  if (engineState.endingPhase === "finalizing" || engineState.endingPhase === "done") {
     return (
       <CompletionView
         reason={engineState.pendingEndReason ?? "MANUAL"}
@@ -211,14 +218,6 @@ export default function TimerRunClient({
         ribbonColor={ribbonColor}
         energy={optimisticEnergy}
       />
-    );
-  }
-
-  if (engineState.endingPhase === "finalizing") {
-    return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-3 text-charcoal-soft">
-        <p>きろくをほぞんしているよ...</p>
-      </div>
     );
   }
 

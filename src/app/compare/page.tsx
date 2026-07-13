@@ -5,6 +5,8 @@ import { computeCurrentEnergy } from "@/lib/rabbit-status";
 import { RIBBON_COLOR_HEX, PALETTE } from "@/lib/theme";
 import Rabbit from "@/components/rabbit/Rabbit";
 import { getPeriodSummary, getTodaySeconds, weekRange, trailingDaysRange } from "@/lib/study-stats";
+import { jstDateKey } from "@/lib/jst";
+import { asMoodLevel, MOOD_CONFIG, type MoodLevel } from "@/lib/mood";
 import { formatDurationShort, formatDiffMinutes } from "@/lib/format";
 import { resolveDistinctPersonColors, hexToRgba } from "@/lib/chart-colors";
 import TimeSeriesBarChart from "@/components/charts/TimeSeriesBarChart";
@@ -40,12 +42,27 @@ export default async function ComparePage({
   const now = new Date();
   const range = span === "week" ? weekRange(now) : trailingDaysRange(30, now);
 
-  const [mySummary, partnerSummary, myToday, partnerToday] = await Promise.all([
-    getPeriodSummary(me.id, range),
-    partner ? getPeriodSummary(partner.id, range) : null,
-    getTodaySeconds(me.id, now),
-    partner ? getTodaySeconds(partner.id, now) : Promise.resolve(0),
-  ]);
+  // 「きょうのきぶん」はJST基準の1日1回チェックイン(src/lib/mood.ts)。
+  const moodDate = jstDateKey(now);
+
+  const [mySummary, partnerSummary, myToday, partnerToday, myMoodEntry, partnerMoodEntry] =
+    await Promise.all([
+      getPeriodSummary(me.id, range),
+      partner ? getPeriodSummary(partner.id, range) : null,
+      getTodaySeconds(me.id, now),
+      partner ? getTodaySeconds(partner.id, now) : Promise.resolve(0),
+      db.moodEntry.findUnique({
+        where: { userId_moodDate: { userId: me.id, moodDate } },
+      }),
+      partner
+        ? db.moodEntry.findUnique({
+            where: { userId_moodDate: { userId: partner.id, moodDate } },
+          })
+        : null,
+    ]);
+
+  const myMood = asMoodLevel(myMoodEntry?.level);
+  const partnerMood = asMoodLevel(partnerMoodEntry?.level);
 
   const myColorRaw = me.rabbit ? RIBBON_COLOR_HEX[me.rabbit.ribbonColor] : PALETTE.pinkDeep;
   const partnerColorRaw = partner?.rabbit ? RIBBON_COLOR_HEX[partner.rabbit.ribbonColor] : PALETTE.lavender;
@@ -84,6 +101,7 @@ export default async function ComparePage({
               todaySeconds={myToday}
               periodSeconds={mySummary.totalSeconds}
               accentColor={myColor}
+              moodLevel={myMood}
             />
             <PersonCard
               label="パートナー"
@@ -97,6 +115,7 @@ export default async function ComparePage({
               todaySeconds={partnerToday}
               periodSeconds={partnerSummary?.totalSeconds ?? 0}
               accentColor={partnerColor}
+              moodLevel={partnerMood}
             />
           </div>
 
@@ -166,6 +185,7 @@ function PersonCard({
   todaySeconds,
   periodSeconds,
   accentColor,
+  moodLevel,
 }: {
   label: string;
   name: string;
@@ -174,6 +194,7 @@ function PersonCard({
   todaySeconds: number;
   periodSeconds: number;
   accentColor: string;
+  moodLevel: MoodLevel | null;
 }) {
   return (
     <div
@@ -184,6 +205,16 @@ function PersonCard({
       <div className="flex flex-col leading-tight">
         <span className="text-[11px] font-bold text-charcoal-soft">{label}</span>
         <span className="text-sm font-bold text-charcoal">{name}</span>
+        <span className="text-xs text-charcoal-soft">
+          きぶん{" "}
+          {moodLevel !== null ? (
+            <span className="font-bold text-charcoal">
+              <span aria-hidden>{MOOD_CONFIG[moodLevel].emoji}</span> {MOOD_CONFIG[moodLevel].label}
+            </span>
+          ) : (
+            "まだ こたえてないよ"
+          )}
+        </span>
         <span className="text-xs text-charcoal-soft">きょう {formatDurationShort(todaySeconds)}</span>
         <span className="text-xs text-charcoal-soft">期間合計 {formatDurationShort(periodSeconds)}</span>
       </div>

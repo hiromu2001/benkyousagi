@@ -89,7 +89,7 @@ export function PinChangeClient() {
   return (
     <div className="w-full">
       <Link
-        href="/"
+        href="/settings"
         className="mb-6 inline-block text-sm text-charcoal-soft transition-colors hover:text-charcoal"
       >
         ← もどる

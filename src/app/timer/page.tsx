@@ -1,27 +1,35 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/dal";
-import { recoverStaleSessionsAction } from "@/lib/timer-actions";
+import { recoverStaleSessionsForUser } from "@/lib/session-finalize";
 import TimerSetupForm from "./_components/TimerSetupForm";
+
+async function findActiveSession(userId: string) {
+  return db.studySession.findFirst({
+    where: { userId, endedAt: null },
+    orderBy: { startedAt: "desc" },
+    select: { id: true, timerType: true },
+  });
+}
 
 export default async function TimerSetupPage() {
   const user = await getCurrentUser();
 
-  // 3-3-1-8節: 前回異常終了したセッションがあれば、設定画面を開いた時点で自動確定する。
-  await recoverStaleSessionsAction();
-
-  const [tags, activeSession] = await Promise.all([
+  // 3-3-1-8節: 前回異常終了したセッションの救済確定は、タグ取得・計測中セッション確認と並列で行う
+  // (直列にDB往復を重ねない)。救済が実際に起きた場合のみ、計測中セッションを取り直して整合させる。
+  const [tags, activeSessionRaw, recoveredCount] = await Promise.all([
     db.tag.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "asc" },
       select: { id: true, name: true },
     }),
-    db.studySession.findFirst({
-      where: { userId: user.id, endedAt: null },
-      orderBy: { startedAt: "desc" },
-      select: { id: true, timerType: true },
-    }),
+    findActiveSession(user.id),
+    recoverStaleSessionsForUser(user.id),
   ]);
+  const activeSession =
+    recoveredCount > 0 && activeSessionRaw
+      ? await findActiveSession(user.id)
+      : activeSessionRaw;
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">

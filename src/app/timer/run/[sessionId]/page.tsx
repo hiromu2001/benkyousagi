@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/dal";
-import { recoverStaleSessionsAction } from "@/lib/timer-actions";
+import { recoverStaleSessionsForUser } from "@/lib/session-finalize";
 import { computeCurrentEnergy } from "@/lib/rabbit-status";
 import TimerRunClient, { type RunConfig } from "./_components/TimerRunClient";
 
@@ -55,12 +55,20 @@ export default async function TimerRunPage({
   ]);
 
   // 3-3-1-8節: このセッション自身が救済対象(異常終了)であれば、表示前に確定させておく。
-  // /timer 経由(recoverStaleSessionsAction呼び出し)を通らずに直接このURLへ再訪した場合の抜け道を防ぐ。
-  await recoverStaleSessionsAction();
-
-  const session = await db.studySession.findFirst({
-    where: { id: sessionId, userId: user.id },
-  });
+  // /timer 経由(救済呼び出し)を通らずに直接このURLへ再訪した場合の抜け道を防ぐ。
+  // セッション取得と並列で走らせ、救済が実際に起きた場合のみ取り直す(直列DB往復の削減)。
+  const [recoveredCount, initialSession] = await Promise.all([
+    recoverStaleSessionsForUser(user.id),
+    db.studySession.findFirst({
+      where: { id: sessionId, userId: user.id },
+    }),
+  ]);
+  const session =
+    recoveredCount > 0 && initialSession && !initialSession.endedAt
+      ? await db.studySession.findFirst({
+          where: { id: sessionId, userId: user.id },
+        })
+      : initialSession;
 
   if (!session) {
     redirect("/timer");

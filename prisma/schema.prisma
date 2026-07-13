@@ -45,6 +45,7 @@ model User {
   studySessions StudySession[]
   tags          Tag[]
   dailyAggregates DailyAggregate[]
+  moodEntries   MoodEntry[]
 }
 
 // REQUIREMENTS.md 3-4節: うさぎステータス仕様
@@ -115,6 +116,21 @@ model StudySessionTag {
   tag            Tag          @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([studySessionId, tagId])
+}
+
+// 「きょうのきぶん」チェックイン(1日1回)。
+// moodDate は日本時間(Asia/Tokyo)基準の "YYYY-MM-DD" 文字列(src/lib/jst.ts で生成)。
+// サーバーのタイムゾーン(Vercel本番はUTC)に依存させないため、DateTimeではなく正規化済み文字列で持つ。
+// リセットはJSTの深夜0時 = moodDate が変わることで自然に実現される。
+model MoodEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moodDate  String // JST基準 "YYYY-MM-DD"
+  level     Int // 1-4 (src/lib/mood.ts の MoodLevel)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, moodDate])
 }
 
 // REQUIREMENTS.md 6章: 比較ウィジェット・可視化画面の表示高速化用の事前集計

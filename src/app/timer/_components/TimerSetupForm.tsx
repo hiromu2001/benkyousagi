@@ -82,11 +82,17 @@ export default function TimerSetupForm({ initialTags }: { initialTags: TagItem[]
     setConfirmDeleteTagId(null);
     setDeletingTagId(tagId);
     setError(null);
+
+    // 楽観的UI: サーバーの完了を待たずに即座に一覧から消す(失敗時のみ元に戻す)。
+    const prevTags = tags;
+    const prevSelectedTagIds = selectedTagIds;
+    setTags((prev) => prev.filter((t) => t.id !== tagId));
+    setSelectedTagIds((prev) => prev.filter((id) => id !== tagId));
     try {
       await deleteTagAction(tagId);
-      setTags((prev) => prev.filter((t) => t.id !== tagId));
-      setSelectedTagIds((prev) => prev.filter((id) => id !== tagId));
     } catch {
+      setTags(prevTags);
+      setSelectedTagIds(prevSelectedTagIds);
       setError("タグの削除に失敗したよ");
     } finally {
       setDeletingTagId(null);

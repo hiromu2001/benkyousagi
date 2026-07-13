@@ -2,10 +2,20 @@
 
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { createSession, deleteSession } from "@/lib/session";
 import { getCurrentUser } from "@/lib/dal";
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "P2002"
+  );
+}
 
 // REQUIREMENTS.md 3-1節 / 10-2節: ロック閾値は実装裁量。2名限定利用のため軽度な待機で十分。
 const MAX_FAILED_ATTEMPTS = 5;
@@ -72,12 +82,18 @@ export async function loginAction(
     return { error: "あれ、ちがうみたい…もう一回ためしてみて" };
   }
 
-  await db.user.update({
-    where: { id: user.id },
-    data: { failedPinAttempts: 0, lockedUntil: null },
-  });
-
-  await createSession(user.id);
+  // 体感速度優先: 失敗カウンタのリセットが必要な時だけ書き込み、セッション発行と並列で行う
+  // (成功ログインの通常経路はDB書き込みなしで即座に完了する)。
+  const needsReset = user.failedPinAttempts !== 0 || user.lockedUntil !== null;
+  await Promise.all([
+    createSession(user.id),
+    needsReset
+      ? db.user.update({
+          where: { id: user.id },
+          data: { failedPinAttempts: 0, lockedUntil: null },
+        })
+      : Promise.resolve(),
+  ]);
   redirect("/");
 }
 
@@ -120,6 +136,48 @@ export async function changePinAction(
     where: { id: user.id },
     data: { pinHash, failedPinAttempts: 0, lockedUntil: null },
   });
+
+  return { success: true };
+}
+
+// onboarding-actions.ts の completeOnboardingAction と同じ桁数制限(10もじ)に揃えている。
+const MAX_NAME_LENGTH = 10;
+
+export async function updateNamesAction(
+  rabbitName: string,
+  displayName: string,
+): Promise<{ error?: string; success?: true }> {
+  const user = await getCurrentUser();
+
+  const trimmedRabbitName = rabbitName.trim().slice(0, MAX_NAME_LENGTH);
+  if (trimmedRabbitName.length === 0) {
+    return { error: "うさぎの なまえを いれてね" };
+  }
+
+  const trimmedDisplayName = displayName.trim().slice(0, MAX_NAME_LENGTH);
+  if (trimmedDisplayName.length === 0) {
+    return { error: "あなたの なまえを いれてね" };
+  }
+
+  try {
+    await db.user.update({
+      where: { id: user.id },
+      data: { displayName: trimmedDisplayName },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return { error: "そのなまえは もうつかわれているみたい" };
+    }
+    throw error;
+  }
+
+  await db.rabbit.update({
+    where: { userId: user.id },
+    data: { name: trimmedRabbitName },
+  });
+
+  // 比較ウィジェットはホーム画面(src/app/page.tsx)にあるため、layout単位で再検証する。
+  revalidatePath("/", "layout");
 
   return { success: true };
 }
