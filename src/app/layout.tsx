@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { getOptionalCurrentUser } from "@/lib/dal";
+import ComparisonWidget from "@/components/comparison/ComparisonWidget";
 
 export const metadata: Metadata = {
   title: "べんきょうさぎ",
   description: "勉強するとうさぎがしあわせになる、ふたりの勉強継続アプリ",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // REQUIREMENTS.md 3-6節: ふたり比較ウィジェットは全ページ共通で常時表示。
+  // 未ログイン時(/login)は何も表示しない。
+  const user = await getOptionalCurrentUser();
+
   return (
     <html lang="ja" className="h-full antialiased">
       <head>
@@ -30,7 +36,23 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col lg:flex-row">
+        {user && (
+          <div className="sticky top-0 z-20 border-b border-pink-deep/15 bg-milk/95 px-3 py-2 backdrop-blur lg:hidden">
+            <ComparisonWidget />
+          </div>
+        )}
+
+        <main className="flex flex-1 flex-col">{children}</main>
+
+        {user && (
+          <aside className="hidden shrink-0 lg:block lg:w-80 lg:p-4">
+            <div className="lg:sticky lg:top-4">
+              <ComparisonWidget />
+            </div>
+          </aside>
+        )}
+      </body>
     </html>
   );
 }
