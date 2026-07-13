@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
 import { getOptionalCurrentUser } from "@/lib/dal";
 import ComparisonWidget from "@/components/comparison/ComparisonWidget";
@@ -51,6 +52,16 @@ export default async function RootLayout({
               <ComparisonWidget />
             </div>
           </aside>
+        )}
+
+        {user && (
+          <Link
+            href="/"
+            aria-label="ホームへもどる"
+            className="fixed bottom-4 left-4 z-30 flex items-center gap-1.5 rounded-full bg-milk/95 px-4 py-2.5 text-sm font-bold text-charcoal shadow-md ring-1 ring-pink-deep/20 backdrop-blur transition-transform active:scale-95 sm:hover:scale-105"
+          >
+            🏠 ホーム
+          </Link>
         )}
       </body>
     </html>
