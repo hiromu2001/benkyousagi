@@ -14,19 +14,20 @@ SQLite互換、無料枠・クレカ不要)。どちらも個人の無料利用�
 
 ## 初回セットアップ
 
+Turso の公式CLIはWindows向けバイナリが配布されていないため、CLIではなく
+Webダッシュボードでアカウント作成・DB作成・トークン発行を行う
+(WSLがあればCLIも使えるが、ここではダッシュボードのみで完結させる)。
+
+```
+1. https://app.turso.tech で無料サインアップ (クレカ不要)
+2. 「Create Database」でDB作成 (名前: benkyousagi、リージョンは Tokyo/nrt を選択)
+3. DBの詳細画面で以下を控える:
+   - Database URL (libsql://... 形式)               → DATABASE_URL
+   - 「Create Token」で発行したトークン              → DATABASE_AUTH_TOKEN
+```
+
 ```bash
-# 1. Turso CLI のインストール・ログイン (無料、クレカ不要)
-curl -sSfL https://get.tur.so/install.sh | bash
-turso auth signup   # 既にアカウントがあれば turso auth login
-
-# 2. DB作成
-turso db create benkyousagi
-
-# 3. 接続情報を取得
-turso db show benkyousagi --url            # → DATABASE_URL に使う (libsql://...)
-turso db tokens create benkyousagi         # → DATABASE_AUTH_TOKEN に使う
-
-# 4. 既存のマイグレーションを一度ローカルから当てて、2アカウントをseedする
+# 1. 既存のマイグレーションを一度ローカルから当てて、2アカウントをseedする
 DATABASE_URL="上で取得したlibsql://..." \
 DATABASE_AUTH_TOKEN="上で取得したトークン" \
 npx prisma migrate deploy
@@ -36,17 +37,17 @@ SEED_USER1_NAME="任意" SEED_USER1_PIN="任意の6桁" \
 SEED_USER2_NAME="任意" SEED_USER2_PIN="任意の6桁" \
 npm run db:seed
 
-# 5. Vercel CLI のインストール・ログイン (無料、クレカ不要 / GitHub連携なしでもOK)
+# 2. Vercel CLI のインストール・ログイン (無料、クレカ不要 / GitHub連携なしでもOK)
 npm i -g vercel
 vercel login
 vercel link   # プロジェクトディレクトリで初回のみ
 
-# 6. 環境変数を登録 (Production環境)
+# 3. 環境変数を登録 (Production環境)
 vercel env add DATABASE_URL production
 vercel env add DATABASE_AUTH_TOKEN production
 vercel env add SESSION_SECRET production   # openssl rand -base64 32 で生成した値
 
-# 7. デプロイ
+# 4. デプロイ
 vercel --prod
 ```
 
