@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "prisma migrate deploy && next build",
+    "vercel-build": "node scripts/migrate-turso.mjs && next build",
+    "db:migrate:turso": "node scripts/migrate-turso.mjs",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",

@@ -8,8 +8,13 @@ SQLite互換、無料枠・クレカ不要)。どちらも個人の無料利用�
 `libsql://` URLでも同じ設定形で動くため、schema.prisma やアプリコードは
 環境変数を差し替えるだけで本番に対応できる。
 
-スキーマは今後も変更していく前提で、`vercel-build`(package.json)が
-`prisma migrate deploy && next build` になっており、デプロイのたびに
+スキーマは今後も変更していく前提。ただし `prisma migrate deploy` はCLI側で
+接続文字列のスキームを検証しており `libsql://` を認識できず失敗するため
+(P1013、Prisma Client + アダプタでの実行時接続とは別の制限)、Turso への
+マイグレーション適用は [scripts/migrate-turso.mjs](scripts/migrate-turso.mjs) が
+`prisma/migrations` 配下のSQLを直接 libSQL クライアントで実行する形で肩代わりする
+(適用済みIDは `_turso_migrations` テーブルで管理)。`vercel-build`(package.json)が
+`node scripts/migrate-turso.mjs && next build` になっており、デプロイのたびに
 未適用のマイグレーションが自動でTursoに反映されてからビルドされる。
 
 ## 初回セットアップ
@@ -30,7 +35,7 @@ Webダッシュボードでアカウント作成・DB作成・トークン発行
 # 1. 既存のマイグレーションを一度ローカルから当てて、2アカウントをseedする
 DATABASE_URL="上で取得したlibsql://..." \
 DATABASE_AUTH_TOKEN="上で取得したトークン" \
-npx prisma migrate deploy
+npm run db:migrate:turso
 
 DATABASE_URL="同上" DATABASE_AUTH_TOKEN="同上" \
 SEED_USER1_NAME="任意" SEED_USER1_PIN="任意の6桁" \

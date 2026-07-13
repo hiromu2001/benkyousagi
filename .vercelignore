@@ -1,0 +1,8 @@
+.env
+.env.local
+.env.*
+!.env.example
+dev.db
+dev.db-journal
+prisma/dev.db
+prisma/dev.db-journal
