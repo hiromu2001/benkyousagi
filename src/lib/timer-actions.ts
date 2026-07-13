@@ -201,6 +201,15 @@ export async function recoverStaleSessionsAction(): Promise<number> {
   return staleSessions.length;
 }
 
+// 所有者チェック: where に userId を含めることで、他ユーザーのタグは0件ヒットとなり削除されない。
+// StudySessionTag は Prisma スキーマの onDelete: Cascade により連動削除される(過去セッション本体は残る)。
+export async function deleteTagAction(tagId: string): Promise<void> {
+  const user = await getCurrentUser();
+  await db.tag.deleteMany({
+    where: { id: tagId, userId: user.id },
+  });
+}
+
 export async function createTagAction(
   name: string,
 ): Promise<{ id: string; name: string }> {

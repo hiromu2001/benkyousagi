@@ -54,13 +54,19 @@ const PHASE_DURATION_MS = 2800;
 
 export function WorldExplainer() {
   const [index, setIndex] = useState(0);
+  const [autoKey, setAutoKey] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setIndex((i) => (i + 1) % PHASES.length);
     }, PHASE_DURATION_MS);
     return () => clearInterval(timer);
-  }, []);
+  }, [autoKey]);
+
+  function goTo(next: number) {
+    setIndex((next + PHASES.length) % PHASES.length);
+    setAutoKey((k) => k + 1);
+  }
 
   const phase = PHASES[index];
 
@@ -75,29 +81,51 @@ export function WorldExplainer() {
         <Rabbit energy={phase.energy} name="おもち" ribbonColor="PINK" size="md" celebrate={phase.celebrate} />
       </motion.div>
 
-      <AnimatePresence mode="wait">
-        <motion.p
-          key={index}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="min-h-11 text-center text-sm leading-relaxed text-charcoal"
-        >
-          {phase.caption}
-        </motion.p>
-      </AnimatePresence>
+      <div className="flex min-h-20 w-full items-center justify-center px-2">
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={index}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="text-center text-sm leading-relaxed text-charcoal"
+          >
+            {phase.caption}
+          </motion.p>
+        </AnimatePresence>
+      </div>
 
-      <div className="flex gap-1.5">
-        {PHASES.map((_, i) => (
-          <span
-            key={i}
-            className={clsx(
-              "h-1.5 w-1.5 rounded-full transition-colors",
-              i === index ? "bg-pink-deep" : "bg-charcoal/15",
-            )}
-          />
-        ))}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          aria-label="まえの せつめいへ"
+          onClick={() => goTo(index - 1)}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-milk text-lg text-charcoal-soft shadow-sm transition active:scale-90 hover:bg-pink/40"
+        >
+          ‹
+        </button>
+
+        <div className="flex gap-1.5">
+          {PHASES.map((_, i) => (
+            <span
+              key={i}
+              className={clsx(
+                "h-1.5 w-1.5 rounded-full transition-colors",
+                i === index ? "bg-pink-deep" : "bg-charcoal/15",
+              )}
+            />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          aria-label="つぎの せつめいへ"
+          onClick={() => goTo(index + 1)}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-milk text-lg text-charcoal-soft shadow-sm transition active:scale-90 hover:bg-pink/40"
+        >
+          ›
+        </button>
       </div>
     </div>
   );

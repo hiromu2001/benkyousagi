@@ -22,7 +22,10 @@ export default async function OnboardingPage() {
   return (
     <main className="flex flex-1 flex-col items-center px-4 py-10 sm:py-14">
       <div className="w-full max-w-md">
-        <OnboardingClient initialName={rabbit.name} initialRibbonColor={rabbit.ribbonColor} />
+        <OnboardingClient
+          initialRibbonColor={rabbit.ribbonColor}
+          initialDisplayName={user.displayName}
+        />
       </div>
     </main>
   );

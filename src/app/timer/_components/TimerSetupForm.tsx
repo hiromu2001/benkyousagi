@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { createTagAction, startSessionAction } from "@/lib/timer-actions";
+import { createTagAction, deleteTagAction, startSessionAction } from "@/lib/timer-actions";
 import {
   COUNTDOWN_MAX_MINUTES,
   COUNTDOWN_MIN_MINUTES,
@@ -32,6 +32,15 @@ export default function TimerSetupForm({ initialTags }: { initialTags: TagItem[]
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [newTagName, setNewTagName] = useState("");
   const [isCreatingTag, setIsCreatingTag] = useState(false);
+  const [confirmDeleteTagId, setConfirmDeleteTagId] = useState<string | null>(null);
+  const [deletingTagId, setDeletingTagId] = useState<string | null>(null);
+  const confirmResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (confirmResetTimer.current) clearTimeout(confirmResetTimer.current);
+    };
+  }, []);
 
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +65,31 @@ export default function TimerSetupForm({ initialTags }: { initialTags: TagItem[]
       setError("タグの作成に失敗しました");
     } finally {
       setIsCreatingTag(false);
+    }
+  }
+
+  async function handleDeleteTagClick(tagId: string) {
+    if (deletingTagId) return;
+
+    if (confirmDeleteTagId !== tagId) {
+      setConfirmDeleteTagId(tagId);
+      if (confirmResetTimer.current) clearTimeout(confirmResetTimer.current);
+      confirmResetTimer.current = setTimeout(() => setConfirmDeleteTagId(null), 3000);
+      return;
+    }
+
+    if (confirmResetTimer.current) clearTimeout(confirmResetTimer.current);
+    setConfirmDeleteTagId(null);
+    setDeletingTagId(tagId);
+    setError(null);
+    try {
+      await deleteTagAction(tagId);
+      setTags((prev) => prev.filter((t) => t.id !== tagId));
+      setSelectedTagIds((prev) => prev.filter((id) => id !== tagId));
+    } catch {
+      setError("タグの削除に失敗したよ");
+    } finally {
+      setDeletingTagId(null);
     }
   }
 
@@ -175,19 +209,37 @@ export default function TimerSetupForm({ initialTags }: { initialTags: TagItem[]
         <h2 className="mb-3 text-sm font-bold text-charcoal-soft">タグ(なくてもOK)</h2>
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => (
-            <button
+            <span
               key={tag.id}
-              type="button"
-              onClick={() => toggleTag(tag.id)}
               className={clsx(
-                "rounded-full px-4 py-2 text-sm font-bold shadow-sm transition active:scale-95",
+                "flex items-center gap-1 rounded-full pl-4 pr-1.5 py-2 text-sm font-bold shadow-sm transition",
                 selectedTagIds.includes(tag.id)
                   ? "bg-mint text-charcoal"
-                  : "bg-milk text-charcoal-soft hover:bg-mint/40",
+                  : "bg-milk text-charcoal-soft",
               )}
             >
-              {tag.name}
-            </button>
+              <button
+                type="button"
+                onClick={() => toggleTag(tag.id)}
+                className="active:scale-95"
+              >
+                {tag.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteTagClick(tag.id)}
+                disabled={deletingTagId === tag.id}
+                aria-label={`${tag.name}を削除`}
+                className={clsx(
+                  "ml-1 rounded-full px-2 py-0.5 text-xs shadow-sm transition active:scale-95 disabled:opacity-50",
+                  confirmDeleteTagId === tag.id
+                    ? "bg-apricot text-charcoal"
+                    : "bg-milk/70 text-charcoal-soft hover:bg-pink/40",
+                )}
+              >
+                {confirmDeleteTagId === tag.id ? "もう一度でけす" : "×"}
+              </button>
+            </span>
           ))}
         </div>
         <div className="mt-3 flex gap-2">

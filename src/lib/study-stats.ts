@@ -102,6 +102,16 @@ export async function getThisWeekSeconds(userId: string, now: Date = new Date())
   return getTotalSeconds(userId, weekRange(now));
 }
 
+// 期間を問わない累計版(全期間の「これまでの合計」表示用)。getTotalSeconds と同じく
+// StudySession を直接集計する(DailyAggregate は導入以前の日付を持たないため)。
+export async function getAllTimeSeconds(userId: string): Promise<number> {
+  const result = await db.studySession.aggregate({
+    where: { userId, durationSeconds: { not: null } },
+    _sum: { durationSeconds: true },
+  });
+  return result._sum.durationSeconds ?? 0;
+}
+
 export type DailyPoint = { date: Date; label: string; totalSeconds: number };
 export type TagBreakdownPoint = { tagId: string; tagName: string; totalSeconds: number };
 
@@ -114,6 +124,26 @@ export type PeriodSummary = {
 
 const NO_TAG_ID = "__no_tag__";
 const NO_TAG_LABEL = "タグなし";
+
+// タグは1セッションに複数付けられる(多対多)。「時間配分」の円グラフにすると
+// 重複計上で合計が100%を超え誤解を招くため、内訳はタグごとの実時間を横棒グラフで見せる方針とし、
+// ここでは各タグへセッションの全時間を計上する(Toggl等のタグ別レポートと同じ考え方)。
+function buildTagBreakdown(sessions: ConfirmedSession[]): TagBreakdownPoint[] {
+  const tagTotals = new Map<string, TagBreakdownPoint>();
+  for (const session of sessions) {
+    const duration = session.durationSeconds ?? 0;
+    const tags = session.tags.length > 0 ? session.tags.map((t) => t.tag) : [{ id: NO_TAG_ID, name: NO_TAG_LABEL }];
+    for (const tag of tags) {
+      const existing = tagTotals.get(tag.id);
+      tagTotals.set(tag.id, {
+        tagId: tag.id,
+        tagName: tag.name,
+        totalSeconds: (existing?.totalSeconds ?? 0) + duration,
+      });
+    }
+  }
+  return Array.from(tagTotals.values()).sort((a, b) => b.totalSeconds - a.totalSeconds);
+}
 
 // 期間内のセッションを一度だけ取得し、合計・日別・タグ別の内訳をまとめて算出する
 // (可視化画面・比較詳細画面のどちらも同じ形の集計を複数回に分けて問い合わせずに済むように)。
@@ -130,23 +160,25 @@ export async function getPeriodSummary(userId: string, range: DateRange): Promis
       .reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0),
   }));
 
-  // タグは1セッションに複数付けられる(多対多)。「時間配分」の円グラフにすると
-  // 重複計上で合計が100%を超え誤解を招くため、内訳はタグごとの実時間を横棒グラフで見せる方針とし、
-  // ここでは各タグへセッションの全時間を計上する(Toggl等のタグ別レポートと同じ考え方)。
-  const tagTotals = new Map<string, TagBreakdownPoint>();
-  for (const session of sessions) {
-    const duration = session.durationSeconds ?? 0;
-    const tags = session.tags.length > 0 ? session.tags.map((t) => t.tag) : [{ id: NO_TAG_ID, name: NO_TAG_LABEL }];
-    for (const tag of tags) {
-      const existing = tagTotals.get(tag.id);
-      tagTotals.set(tag.id, {
-        tagId: tag.id,
-        tagName: tag.name,
-        totalSeconds: (existing?.totalSeconds ?? 0) + duration,
-      });
-    }
-  }
-  const tagBreakdown = Array.from(tagTotals.values()).sort((a, b) => b.totalSeconds - a.totalSeconds);
+  const tagBreakdown = buildTagBreakdown(sessions);
 
   return { totalSeconds, sessions, dailyBreakdown, tagBreakdown };
+}
+
+export type AllTimeSummary = {
+  totalSeconds: number;
+  tagBreakdown: TagBreakdownPoint[];
+};
+
+// 累計タブ用: 期間を絞らず全確定セッションを集計する(日別内訳は対象外)。
+export async function getAllTimeSummary(userId: string): Promise<AllTimeSummary> {
+  const sessions = await db.studySession.findMany({
+    where: { userId, durationSeconds: { not: null } },
+    select: sessionSelect,
+    orderBy: { startedAt: "asc" },
+  });
+  const totalSeconds = sessions.reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0);
+  const tagBreakdown = buildTagBreakdown(sessions);
+
+  return { totalSeconds, tagBreakdown };
 }

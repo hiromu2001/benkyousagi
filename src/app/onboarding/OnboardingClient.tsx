@@ -20,23 +20,32 @@ const STEP_TRANSITION = {
 };
 
 export function OnboardingClient({
-  initialName,
   initialRibbonColor,
+  initialDisplayName,
 }: {
-  initialName: string;
   initialRibbonColor: RibbonColor;
+  initialDisplayName: string;
 }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
+  const [displayName, setDisplayName] = useState(initialDisplayName);
   const [ribbonColor, setRibbonColor] = useState<RibbonColor>(initialRibbonColor);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
-  const previewName = name.trim() || initialName || "おもち";
+  const trimmedName = name.trim();
+  const trimmedDisplayName = displayName.trim();
+  const previewName = trimmedName;
+  const canSubmit = !isPending && trimmedName.length > 0 && trimmedDisplayName.length > 0;
 
   function handleSubmit() {
-    if (isPending) return;
+    if (!canSubmit) return;
+    setError(null);
     startTransition(async () => {
-      await completeOnboardingAction(name, ribbonColor);
+      const result = await completeOnboardingAction(name, ribbonColor, displayName);
+      if (result?.error) {
+        setError(result.error);
+      }
     });
   }
 
@@ -100,19 +109,36 @@ export function OnboardingClient({
 
             <div className="flex flex-col items-center gap-2">
               <Rabbit energy={PREVIEW_ENERGY} name={previewName} ribbonColor={ribbonColor} size="md" />
-              <p className="text-lg font-bold text-charcoal">{previewName}</p>
+              <p className="text-lg font-bold text-charcoal">
+                {previewName || "(なまえを いれてね)"}
+              </p>
             </div>
 
             <div>
               <label htmlFor="rabbit-name" className="mb-2 block text-sm font-bold text-charcoal-soft">
-                なまえ(10もじまで)
+                うさぎの なまえ(10もじまで)
               </label>
               <input
                 id="rabbit-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="おもち"
+                placeholder="なまえを にゅうりょく"
+                maxLength={NAME_MAX_LENGTH}
+                className="w-full rounded-xl bg-milk px-4 py-3 text-lg font-bold text-charcoal shadow-sm outline-none ring-pink-deep focus:ring-2"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="user-display-name" className="mb-2 block text-sm font-bold text-charcoal-soft">
+                あなたの なまえ(10もじまで)
+              </label>
+              <input
+                id="user-display-name"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="なまえを にゅうりょく"
                 maxLength={NAME_MAX_LENGTH}
                 className="w-full rounded-xl bg-milk px-4 py-3 text-lg font-bold text-charcoal shadow-sm outline-none ring-pink-deep focus:ring-2"
               />
@@ -144,10 +170,14 @@ export function OnboardingClient({
               </div>
             </div>
 
+            {error && (
+              <p className="text-center text-sm font-bold text-pink-deep">{error}</p>
+            )}
+
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={isPending}
+              disabled={!canSubmit}
               className="mt-2 w-full rounded-full bg-apricot px-8 py-4 text-lg font-bold text-charcoal shadow-md transition-transform active:scale-95 disabled:opacity-50 sm:hover:scale-[1.02]"
             >
               {isPending ? "じゅんびちゅう..." : "はじめる"}
