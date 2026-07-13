@@ -15,8 +15,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // REQUIREMENTS.md 3-6節: ふたり比較ウィジェットは全ページ共通で常時表示。
-  // 未ログイン時(/login)は何も表示しない。
+  // 未ログイン時(/login)は何も表示しない。オンボーディング未完了時はうさぎが
+  // まだ「おもち」のダミー状態のため、比較ウィジェットとホームボタンは出さない。
   const user = await getOptionalCurrentUser();
+  const showChrome = Boolean(user?.rabbit?.onboardedAt);
 
   return (
     <html lang="ja" className="h-full antialiased">
@@ -38,7 +40,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col lg:flex-row">
-        {user && (
+        {showChrome && (
           <div className="sticky top-0 z-20 border-b border-pink-deep/15 bg-milk/95 px-3 py-2 backdrop-blur lg:hidden">
             <ComparisonWidget />
           </div>
@@ -46,7 +48,7 @@ export default async function RootLayout({
 
         <main className="flex flex-1 flex-col">{children}</main>
 
-        {user && (
+        {showChrome && (
           <aside className="hidden shrink-0 lg:block lg:w-80 lg:p-4">
             <div className="lg:sticky lg:top-4">
               <ComparisonWidget />
@@ -54,7 +56,7 @@ export default async function RootLayout({
           </aside>
         )}
 
-        {user && (
+        {showChrome && (
           <Link
             href="/"
             aria-label="ホームへもどる"

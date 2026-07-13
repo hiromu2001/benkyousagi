@@ -59,14 +59,22 @@ export default async function Home() {
         <p className="text-sm text-charcoal-soft">
           おかえり、<span className="font-bold text-charcoal">{user.displayName}</span>さん
         </p>
-        <form action={logoutAction}>
-          <button
-            type="submit"
+        <div className="flex items-center gap-1">
+          <Link
+            href="/settings"
             className="rounded-full px-3 py-1.5 text-xs text-charcoal-soft transition-colors hover:bg-pink/40 active:scale-95"
           >
-            ログアウト
-          </button>
-        </form>
+            せってい
+          </Link>
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="rounded-full px-3 py-1.5 text-xs text-charcoal-soft transition-colors hover:bg-pink/40 active:scale-95"
+            >
+              ログアウト
+            </button>
+          </form>
+        </div>
       </header>
 
       <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-5 px-6 pb-10 text-center">
