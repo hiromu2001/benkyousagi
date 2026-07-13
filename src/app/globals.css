@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+/*
+ * benkyousagi デザイントークン
+ * 参照: docs/REQUIREMENTS.md 2-5節「UI全体のトンマナ」
+ * 純黒・純白・ビビッド原色は使用しない。
+ */
+:root {
+  --color-milk: #fff9f5; /* ベース */
+  --color-pink: #f5d0d8; /* メイン（くすみピンク） */
+  --color-pink-deep: #e9aebb;
+  --color-lavender: #cbbbe8; /* アクセント1 */
+  --color-mint: #bfe3d0; /* アクセント2 */
+  --color-charcoal: #6b5b5b; /* テキスト・線 */
+  --color-charcoal-soft: #9a8a8a;
+  --color-apricot: #f4b183; /* 強調色（にんじん等） */
+
+  --background: var(--color-milk);
+  --foreground: var(--color-charcoal);
+}
+
+@theme inline {
+  --color-milk: var(--color-milk);
+  --color-pink: var(--color-pink);
+  --color-pink-deep: var(--color-pink-deep);
+  --color-lavender: var(--color-lavender);
+  --color-mint: var(--color-mint);
+  --color-charcoal: var(--color-charcoal);
+  --color-charcoal-soft: var(--color-charcoal-soft);
+  --color-apricot: var(--color-apricot);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "M PLUS Rounded 1c", "Zen Maru Gothic", sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+}

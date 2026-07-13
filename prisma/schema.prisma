@@ -1,0 +1,122 @@
+// benkyousagi データモデル
+// 参照: docs/REQUIREMENTS.md 6章「データモデル概略」
+// 開発環境は SQLite。本番はホスティング先に応じて datasource を差し替える想定（Prisma のため provider 変更のみで移行可能）。
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum RibbonColor {
+  PINK // くすみピンク
+  LAVENDER
+  MINT
+  CREAM
+}
+
+enum TimerType {
+  COUNTUP
+  COUNTDOWN
+  POMODORO
+}
+
+// REQUIREMENTS.md 3-3-1 節: セッションがどう終わったか
+enum EndReason {
+  COMPLETED // カウントダウン満了 / ポモドーロ全セット完了
+  MANUAL // 手動での途中終了
+  INACTIVITY_AUTO // 3時間無操作の確認に無応答で自動停止
+  RECOVERED // アプリを閉じたまま等の異常終了を、次回起動時に救済確定
+}
+
+model User {
+  id                String   @id @default(cuid())
+  displayName       String   @unique
+  pinHash           String
+  failedPinAttempts Int      @default(0)
+  lockedUntil       DateTime?
+  createdAt         DateTime @default(now())
+
+  rabbit        Rabbit?
+  studySessions StudySession[]
+  tags          Tag[]
+  dailyAggregates DailyAggregate[]
+}
+
+// REQUIREMENTS.md 3-4節: うさぎステータス仕様
+model Rabbit {
+  id                String      @id @default(cuid())
+  userId            String      @unique
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String      @default("おもち")
+  ribbonColor       RibbonColor @default(CREAM)
+  energy            Int         @default(60) // 0-100
+  energyUpdatedAt   DateTime    @default(now())
+  lastSessionEndAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// REQUIREMENTS.md 3-2, 3-3節: 勉強セッション
+model StudySession {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  timerType TimerType
+  startedAt DateTime
+  endedAt   DateTime?
+
+  // 実勉強時間（休憩・スキップ分・無操作猶予分を除いた確定時間）。
+  // セッション進行中は null、確定時に秒数を書き込む。
+  durationSeconds Int?
+  endReason       EndReason?
+
+  // ポモドーロのみ使用
+  pomodoroSetsCompleted Int @default(0)
+  breaksSkipped         Int @default(0)
+
+  tags StudySessionTag[]
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, startedAt])
+}
+
+// REQUIREMENTS.md 3-5, 3-6節: 科目タグ（ユーザーごとの自由登録）
+model Tag {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+
+  sessions StudySessionTag[]
+
+  @@unique([userId, name])
+}
+
+model StudySessionTag {
+  studySessionId String
+  studySession   StudySession @relation(fields: [studySessionId], references: [id], onDelete: Cascade)
+  tagId          String
+  tag            Tag          @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([studySessionId, tagId])
+}
+
+// REQUIREMENTS.md 6章: 比較ウィジェット・可視化画面の表示高速化用の事前集計
+model DailyAggregate {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime // 日付のみ使用（00:00に正規化）
+  totalSeconds   Int      @default(0)
+  sessionCount   Int      @default(0)
+
+  @@unique([userId, date])
+}
