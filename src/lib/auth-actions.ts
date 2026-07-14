@@ -101,6 +101,8 @@ export async function loginAction(
           data: { failedPinAttempts: 0, lockedUntil: null },
         })
       : Promise.resolve(),
+    // 比較詳細画面のログイン履歴用(REQUIREMENTS.md 5-1節)。
+    db.loginEvent.create({ data: { userId: user.id } }),
   ]);
   redirect("/");
 }

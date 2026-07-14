@@ -59,6 +59,7 @@ model User {
   moodEntries   MoodEntry[]
   coinTransactions CoinTransaction[]
   ownedItems    OwnedItem[]
+  loginEvents   LoginEvent[]
 }
 
 // REQUIREMENTS.md 3-4節: うさぎステータス仕様
@@ -198,4 +199,16 @@ model OwnedItem {
   purchasedAt DateTime @default(now())
 
   @@unique([userId, itemId])
+}
+
+// ログイン履歴(2026-07-16追加)。「比較詳細画面」でお互いの最近のログインが見えるようにするための記録。
+// セッションは30日間有効(src/lib/session.ts)なので、これはアプリを開いた全アクセスではなく
+// PINでの明示的なログイン成功のみを記録する(loginAction参照)。
+model LoginEvent {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loggedInAt DateTime @default(now())
+
+  @@index([userId, loggedInAt])
 }

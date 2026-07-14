@@ -5,7 +5,7 @@ import { computeCurrentEnergy } from "@/lib/rabbit-status";
 import { RIBBON_COLOR_HEX, PALETTE } from "@/lib/theme";
 import Rabbit from "@/components/rabbit/Rabbit";
 import { getPeriodSummary, getTodaySeconds, weekRange, trailingDaysRange } from "@/lib/study-stats";
-import { jstDateKey } from "@/lib/jst";
+import { jstDateKey, formatJstMonthDayJa, formatJstTime } from "@/lib/jst";
 import { asMoodLevel, MOOD_CONFIG, type MoodLevel } from "@/lib/mood";
 import { formatDurationShort, formatDiffMinutes } from "@/lib/format";
 import { resolveDistinctPersonColors, hexToRgba } from "@/lib/chart-colors";
@@ -45,7 +45,7 @@ export default async function ComparePage({
   // 「きょうのきぶん」はJST基準の1日1回チェックイン(src/lib/mood.ts)。
   const moodDate = jstDateKey(now);
 
-  const [mySummary, partnerSummary, myToday, partnerToday, myMoodEntry, partnerMoodEntry] =
+  const [mySummary, partnerSummary, myToday, partnerToday, myMoodEntry, partnerMoodEntry, loginEvents] =
     await Promise.all([
       getPeriodSummary(me.id, range),
       partner ? getPeriodSummary(partner.id, range) : null,
@@ -59,6 +59,14 @@ export default async function ComparePage({
             where: { userId_moodDate: { userId: partner.id, moodDate } },
           })
         : null,
+      partner
+        ? db.loginEvent.findMany({
+            where: { userId: { in: [me.id, partner.id] } },
+            orderBy: { loggedInAt: "desc" },
+            take: 12,
+            select: { userId: true, loggedInAt: true },
+          })
+        : Promise.resolve([]),
     ]);
 
   const myMood = asMoodLevel(myMoodEntry?.level);
@@ -173,6 +181,30 @@ export default async function ComparePage({
               </table>
             </details>
           </section>
+
+          {loginEvents.length > 0 && (
+            <section className="rounded-2xl border border-pink-deep/20 bg-milk p-4 shadow-sm">
+              <h2 className="mb-2 text-sm font-bold text-charcoal">ログイン履歴</h2>
+              <ul className="flex flex-col gap-1.5">
+                {loginEvents.map((ev) => {
+                  const isMe = ev.userId === me.id;
+                  return (
+                    <li
+                      key={`${ev.userId}-${ev.loggedInAt.toISOString()}`}
+                      className="flex items-center justify-between text-xs text-charcoal-soft"
+                    >
+                      <span className="font-bold" style={{ color: isMe ? myColor : partnerColor }}>
+                        {isMe ? myName : partnerName}
+                      </span>
+                      <span>
+                        {formatJstMonthDayJa(ev.loggedInAt)} {formatJstTime(ev.loggedInAt)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
         </>
       )}
     </div>
