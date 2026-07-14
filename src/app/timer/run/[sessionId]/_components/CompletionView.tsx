@@ -12,7 +12,9 @@ type Props = {
   durationMs: number;
   rabbitName: string;
   ribbonColor: RibbonColor;
+  equippedItem: string | null;
   energy: number;
+  earnedCoins: number;
 };
 
 const DECORATIONS = ["🌸", "🌷", "🥕", "⭐", "🍀", "🌼"];
@@ -24,18 +26,25 @@ export default function CompletionView({
   durationMs,
   rabbitName,
   ribbonColor,
+  equippedItem,
   energy,
+  earnedCoins,
 }: Props) {
   if (reason === "INACTIVITY_AUTO") {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 px-6 text-center">
-        <Rabbit energy={energy} name={rabbitName} ribbonColor={ribbonColor} size="sm" />
+        <Rabbit energy={energy} name={rabbitName} ribbonColor={ribbonColor} equippedItem={equippedItem} size="sm" />
         <p className="text-charcoal-soft">
           しばらく操作がなかったので、そこまでの記録を保存したよ。
         </p>
         <p className="font-bold text-charcoal">
           {formatMinutesLabel(durationMs)}ぶん、記録したよ
         </p>
+        {earnedCoins > 0 && (
+          <span className="rounded-full bg-apricot/40 px-3 py-1 text-xs font-bold text-charcoal">
+            +{earnedCoins} コイン
+          </span>
+        )}
         <Link
           href="/"
           className="mt-2 rounded-full bg-pink px-6 py-3 font-bold text-charcoal shadow-sm transition active:scale-95"
@@ -77,6 +86,7 @@ export default function CompletionView({
           energy={energy}
           name={rabbitName}
           ribbonColor={ribbonColor}
+          equippedItem={equippedItem}
           size={isRich ? "lg" : "md"}
           celebrate
         />
@@ -88,6 +98,11 @@ export default function CompletionView({
       <p className="text-charcoal-soft">
         きょうも{rabbitName}といっしょに、{formatMinutesLabel(durationMs)}がんばったよ
       </p>
+      {earnedCoins > 0 && (
+        <span className="rounded-full bg-apricot/40 px-4 py-1.5 text-sm font-bold text-charcoal">
+          +{earnedCoins} コイン
+        </span>
+      )}
 
       <Link
         href="/"

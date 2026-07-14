@@ -33,6 +33,14 @@ enum EndReason {
   RECOVERED // アプリを閉じたまま等の異常終了を、次回起動時に救済確定
 }
 
+// REQUIREMENTS.md 3-7節: コインの増減理由
+enum CoinReason {
+  STUDY_SESSION // 実勉強時間1分につき+1
+  COMPLETION_BONUS // 満了/ポモドーロ全セット完了時の+20
+  MOOD_CHECKIN // きょうのきぶん回答時の+10
+  PURCHASE // おみせでの消費
+}
+
 model User {
   id                String   @id @default(cuid())
   displayName       String   @unique
@@ -41,11 +49,16 @@ model User {
   lockedUntil       DateTime?
   createdAt         DateTime @default(now())
 
+  // REQUIREMENTS.md 3-7節: コイン残高。増減は必ずCoinTransactionと同一トランザクションで行う。
+  coinBalance Int @default(0)
+
   rabbit        Rabbit?
   studySessions StudySession[]
   tags          Tag[]
   dailyAggregates DailyAggregate[]
   moodEntries   MoodEntry[]
+  coinTransactions CoinTransaction[]
+  ownedItems    OwnedItem[]
 }
 
 // REQUIREMENTS.md 3-4節: うさぎステータス仕様
@@ -58,6 +71,10 @@ model Rabbit {
   energy            Int         @default(60) // 0-100。lastSessionEndAt 時点の確定値（減衰は読み取り時に computeCurrentEnergy() で計算）
   lastSessionEndAt  DateTime?
   onboardedAt       DateTime? // nullの間は初回オンボーディング(命名・リボン色・世界観説明)を表示する
+
+  // REQUIREMENTS.md 3-7節: 装備中アクセサリーの商品コード(未装備はnull)。
+  // 所持アクセサリー(OwnedItem)に存在するコードのみ許可(アプリ側で検証)。
+  equippedItemId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -152,4 +169,33 @@ model DailyAggregate {
   sessionCount   Int      @default(0)
 
   @@unique([userId, date])
+}
+
+// コインの増減履歴(REQUIREMENTS.md 3-7節)。残高(User.coinBalance)だけでは増減の由来が
+// 消えるため、履歴表示・不正調査用に持つ。refIdで由来(StudySession.id・moodDate等)を残し、
+// (userId, reason, refId)の一意制約でStudySession/MoodEntry起因の二重加算を防ぐ
+// (購入等refIdを使わない行はnullでよく、SQLiteはnull同士を区別するため一意制約に抵触しない)。
+model CoinTransaction {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int // 正=獲得、負=消費
+  reason    CoinReason
+  refId     String?
+  createdAt DateTime   @default(now())
+
+  @@unique([userId, reason, refId])
+  @@index([userId, createdAt])
+}
+
+// 所持アクセサリー(REQUIREMENTS.md 3-7節)。買い切り品の所有記録。
+// にんじんは消耗品(所有物を持たない)のため対象外、CoinTransaction(PURCHASE)にのみ記録される。
+model OwnedItem {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId      String // 商品コード。価格・名前・カテゴリはDBに持たず src/lib/shop.ts の定数で管理する
+  purchasedAt DateTime @default(now())
+
+  @@unique([userId, itemId])
 }

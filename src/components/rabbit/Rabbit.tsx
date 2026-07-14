@@ -21,7 +21,12 @@ import {
   SparkleField,
   HeartBurst,
   AmbientHeart,
+  Glasses,
+  Beret,
+  Nightcap,
+  FlowerCrown,
 } from "./RabbitParts";
+import { isAccessoryId, type AccessoryId } from "@/lib/shop";
 
 export type RabbitProps = {
   energy: number;
@@ -29,7 +34,21 @@ export type RabbitProps = {
   ribbonColor: "PINK" | "LAVENDER" | "MINT" | "CREAM";
   size?: "sm" | "md" | "lg";
   celebrate?: boolean;
+  equippedItem?: string | null;
 };
+
+const ACCESSORY_COMPONENTS: Record<AccessoryId, () => React.JSX.Element> = {
+  glasses: Glasses,
+  beret: Beret,
+  nightcap: Nightcap,
+  flower_crown: FlowerCrown,
+};
+
+function Accessory({ itemId }: { itemId?: string | null }) {
+  if (!isAccessoryId(itemId)) return null;
+  const Component = ACCESSORY_COMPONENTS[itemId];
+  return <Component />;
+}
 
 const SIZE_CLASSES: Record<NonNullable<RabbitProps["size"]>, string> = {
   sm: "w-14 h-14",
@@ -70,6 +89,7 @@ export default function Rabbit({
   ribbonColor,
   size = "md",
   celebrate = false,
+  equippedItem = null,
 }: RabbitProps) {
   const stage = energyStage(energy);
   const config = STAGE_CONFIG[stage];
@@ -134,6 +154,7 @@ export default function Rabbit({
                 <Nose />
                 <Eyes shape={config.eyes} blinkDuration={config.blinkDuration} />
                 <Mouth shape={config.mouth} />
+                <Accessory itemId={equippedItem} />
               </motion.g>
             </SwayWrap>
           </AmbientHop>

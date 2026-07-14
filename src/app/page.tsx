@@ -86,6 +86,13 @@ export default async function Home() {
         </p>
         <div className="flex items-center gap-1">
           <Link
+            href="/shop"
+            aria-label={`コイン残高 ${user.coinBalance}、おみせへ`}
+            className="flex items-center gap-1 rounded-full bg-apricot/30 px-3 py-1.5 text-xs font-bold text-charcoal transition-colors hover:bg-apricot/50 active:scale-95"
+          >
+            <span aria-hidden>🪙</span> {user.coinBalance}
+          </Link>
+          <Link
             href="/settings"
             className="rounded-full px-3 py-1.5 text-xs text-charcoal-soft transition-colors hover:bg-pink/40 active:scale-95"
           >
@@ -107,6 +114,7 @@ export default async function Home() {
           energy={energy}
           rabbitName={rabbit.name}
           ribbonColor={rabbit.ribbonColor}
+          equippedItem={rabbit.equippedItemId}
           stageLabel={stageLabel}
           stageMessage={message}
           initialMoodLevel={initialMoodLevel}
@@ -125,6 +133,9 @@ export default async function Home() {
           </Link>
           <Link href="/compare" className="underline-offset-4 hover:underline">
             ふたりをみる
+          </Link>
+          <Link href="/shop" className="underline-offset-4 hover:underline">
+            おみせにいく
           </Link>
         </nav>
       </main>

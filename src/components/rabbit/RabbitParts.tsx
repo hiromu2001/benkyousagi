@@ -410,3 +410,82 @@ export function AmbientHeart() {
     />
   );
 }
+
+// おみせ(REQUIREMENTS.md 3-7節)で購入できるアクセサリー第1弾。装備スロットは
+// 「あたま・かお」の1枠のみのため、常にEyes/Mouthより前面(最後)に描画すればよい。
+
+export function Glasses() {
+  return (
+    <g>
+      <circle cx={104} cy={126} r={13} fill="none" stroke={PALETTE.charcoal} strokeWidth={3.5} />
+      <circle cx={136} cy={126} r={13} fill="none" stroke={PALETTE.charcoal} strokeWidth={3.5} />
+      <path d="M117,126 L123,126" stroke={PALETTE.charcoal} strokeWidth={3.5} strokeLinecap="round" />
+      <path d="M91,124 L83,121" stroke={PALETTE.charcoal} strokeWidth={3} strokeLinecap="round" />
+      <path d="M149,124 L157,121" stroke={PALETTE.charcoal} strokeWidth={3} strokeLinecap="round" />
+    </g>
+  );
+}
+
+export function Beret() {
+  return (
+    <g>
+      <ellipse cx={124} cy={66} rx={34} ry={20} fill={PALETTE.pinkDeep} stroke={PALETTE.charcoal} strokeWidth={4} />
+      <ellipse cx={118} cy={74} rx={32} ry={11} fill={PALETTE.pinkDeep} stroke={PALETTE.charcoal} strokeWidth={3.5} />
+      <circle cx={150} cy={52} r={4.5} fill={PALETTE.pinkDeep} stroke={PALETTE.charcoal} strokeWidth={2.5} />
+    </g>
+  );
+}
+
+export function Nightcap() {
+  return (
+    <g>
+      <path
+        d="M86,86 C86,54 100,38 122,38 C146,38 158,56 156,80 C130,68 100,72 86,86 Z"
+        fill={PALETTE.lavender}
+        stroke={PALETTE.charcoal}
+        strokeWidth={4}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M156,80 C168,86 176,96 172,104 C164,100 156,92 150,84 Z"
+        fill={PALETTE.lavender}
+        stroke={PALETTE.charcoal}
+        strokeWidth={3.5}
+        strokeLinejoin="round"
+      />
+      <circle cx={172} cy={106} r={6} fill={PALETTE.milk} stroke={PALETTE.charcoal} strokeWidth={3} />
+    </g>
+  );
+}
+
+function CrownBud({ cx, cy }: { cx: number; cy: number }) {
+  const petals = Array.from({ length: 5 }, (_, i) => {
+    const ang = (i / 5) * Math.PI * 2;
+    const px = cx + Math.cos(ang) * 4.5;
+    const py = cy + Math.sin(ang) * 4.5;
+    return <circle key={i} cx={px} cy={py} r={3.6} fill={PALETTE.pink} stroke={PALETTE.charcoal} strokeWidth={1.2} />;
+  });
+  return (
+    <g>
+      {petals}
+      <circle cx={cx} cy={cy} r={2.6} fill={PALETTE.apricot} />
+    </g>
+  );
+}
+
+export function FlowerCrown() {
+  const positions = [
+    { cx: 82, cy: 90 },
+    { cx: 101, cy: 74 },
+    { cx: 120, cy: 68 },
+    { cx: 139, cy: 74 },
+    { cx: 158, cy: 90 },
+  ];
+  return (
+    <g>
+      {positions.map((p, i) => (
+        <CrownBud key={i} cx={p.cx} cy={p.cy} />
+      ))}
+    </g>
+  );
+}

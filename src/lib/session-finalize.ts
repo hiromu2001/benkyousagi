@@ -1,7 +1,7 @@
 import "server-only";
 import { startOfJstDay } from "@/lib/jst";
 import { db } from "@/lib/db";
-import { EndReason } from "@/generated/prisma";
+import { EndReason, CoinReason } from "@/generated/prisma";
 import {
   computeCurrentEnergy,
   energyAfterSessionStart,
@@ -9,6 +9,7 @@ import {
   clampEnergy,
 } from "@/lib/rabbit-status";
 import { STALE_SESSION_RECOVERY_MS } from "@/lib/timer-config";
+import { COIN_PER_MINUTE, COIN_COMPLETION_BONUS } from "@/lib/shop";
 
 // timer-actions.ts("use server"ファイル)から切り出したセッション確定ロジック。
 // "use server"ファイルのexportはすべてServer Action(公開POSTエンドポイント)になるため、
@@ -77,6 +78,28 @@ export async function finalizeSession(
         sessionCount: 1,
       },
     });
+
+    // REQUIREMENTS.md 3-7-2節: コインは元気度と完全に分離した独立レイヤー(勝手に変換しない)。
+    // 開始→即終了の連打が採掘手段にならないよう、開始ボーナスは設けず実勉強時間分のみ加算する。
+    const baseCoins = Math.floor(duration / 60) * COIN_PER_MINUTE;
+    const bonusCoins = endReason === EndReason.COMPLETED ? COIN_COMPLETION_BONUS : 0;
+    const earnedCoins = baseCoins + bonusCoins;
+    if (earnedCoins > 0) {
+      if (baseCoins > 0) {
+        await tx.coinTransaction.create({
+          data: { userId, amount: baseCoins, reason: CoinReason.STUDY_SESSION, refId: sessionId },
+        });
+      }
+      if (bonusCoins > 0) {
+        await tx.coinTransaction.create({
+          data: { userId, amount: bonusCoins, reason: CoinReason.COMPLETION_BONUS, refId: sessionId },
+        });
+      }
+      await tx.user.update({
+        where: { id: userId },
+        data: { coinBalance: { increment: earnedCoins } },
+      });
+    }
   });
 }
 

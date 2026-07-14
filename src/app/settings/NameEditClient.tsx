@@ -15,11 +15,13 @@ export function NameEditClient({
   initialDisplayName,
   initialRibbonColor,
   energy,
+  equippedItem,
 }: {
   initialRabbitName: string;
   initialDisplayName: string;
   initialRibbonColor: RibbonColor;
   energy: number;
+  equippedItem: string | null;
 }) {
   const [rabbitName, setRabbitName] = useState(initialRabbitName);
   const [displayName, setDisplayName] = useState(initialDisplayName);
@@ -49,7 +51,13 @@ export function NameEditClient({
       <h2 className="text-lg font-bold text-charcoal">なまえの へんこう</h2>
 
       <div className="flex flex-col items-center gap-1">
-        <Rabbit energy={energy} name={rabbitName || "(なまえを いれてね)"} ribbonColor={ribbonColor} size="md" />
+        <Rabbit
+          energy={energy}
+          name={rabbitName || "(なまえを いれてね)"}
+          ribbonColor={ribbonColor}
+          equippedItem={equippedItem}
+          size="md"
+        />
       </div>
 
       <div>

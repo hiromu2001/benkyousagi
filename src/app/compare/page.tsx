@@ -98,6 +98,7 @@ export default async function ComparePage({
               name={myName}
               energy={me.rabbit ? computeCurrentEnergy(me.rabbit.energy, me.rabbit.lastSessionEndAt, now) : 0}
               ribbonColor={me.rabbit?.ribbonColor ?? "CREAM"}
+              equippedItem={me.rabbit?.equippedItemId ?? null}
               todaySeconds={myToday}
               periodSeconds={mySummary.totalSeconds}
               accentColor={myColor}
@@ -112,6 +113,7 @@ export default async function ComparePage({
                   : 0
               }
               ribbonColor={partner.rabbit?.ribbonColor ?? "LAVENDER"}
+              equippedItem={partner.rabbit?.equippedItemId ?? null}
               todaySeconds={partnerToday}
               periodSeconds={partnerSummary?.totalSeconds ?? 0}
               accentColor={partnerColor}
@@ -182,6 +184,7 @@ function PersonCard({
   name,
   energy,
   ribbonColor,
+  equippedItem,
   todaySeconds,
   periodSeconds,
   accentColor,
@@ -191,6 +194,7 @@ function PersonCard({
   name: string;
   energy: number;
   ribbonColor: RibbonColor;
+  equippedItem: string | null;
   todaySeconds: number;
   periodSeconds: number;
   accentColor: string;
@@ -201,7 +205,7 @@ function PersonCard({
       className="flex min-w-[13rem] flex-1 items-center gap-3 rounded-2xl p-3"
       style={{ backgroundColor: hexToRgba(accentColor, 0.15) }}
     >
-      <Rabbit size="md" energy={energy} name={name} ribbonColor={ribbonColor} />
+      <Rabbit size="md" energy={energy} name={name} ribbonColor={ribbonColor} equippedItem={equippedItem} />
       <div className="flex flex-col leading-tight">
         <span className="text-[11px] font-bold text-charcoal-soft">{label}</span>
         <span className="text-sm font-bold text-charcoal">{name}</span>

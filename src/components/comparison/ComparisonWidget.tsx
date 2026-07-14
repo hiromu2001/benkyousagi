@@ -63,6 +63,7 @@ export default async function ComparisonWidget() {
               : 0
           }
           ribbonColor={mine.user.rabbit?.ribbonColor ?? "CREAM"}
+          equippedItem={mine.user.rabbit?.equippedItemId ?? null}
           todaySeconds={mine.todaySeconds}
           weekSeconds={mine.weekSeconds}
           accentColor={myColor}
@@ -76,6 +77,7 @@ export default async function ComparisonWidget() {
                 : 0
             }
             ribbonColor={rival.user.rabbit?.ribbonColor ?? "LAVENDER"}
+            equippedItem={rival.user.rabbit?.equippedItemId ?? null}
             todaySeconds={rival.todaySeconds}
             weekSeconds={rival.weekSeconds}
             accentColor={rivalColor}
@@ -96,6 +98,7 @@ function UserPanel({
   name,
   energy,
   ribbonColor,
+  equippedItem,
   todaySeconds,
   weekSeconds,
   accentColor,
@@ -103,6 +106,7 @@ function UserPanel({
   name: string;
   energy: number;
   ribbonColor: RibbonColor;
+  equippedItem: string | null;
   todaySeconds: number;
   weekSeconds: number;
   accentColor: string;
@@ -112,7 +116,7 @@ function UserPanel({
       className="flex min-w-[9.5rem] flex-1 items-center gap-2 rounded-xl px-2.5 py-1.5"
       style={{ backgroundColor: hexToRgba(accentColor, 0.15) }}
     >
-      <Rabbit size="sm" energy={energy} name={name} ribbonColor={ribbonColor} />
+      <Rabbit size="sm" energy={energy} name={name} ribbonColor={ribbonColor} equippedItem={equippedItem} />
       <div className="flex min-w-0 flex-col leading-tight">
         <span className="truncate text-xs font-bold text-charcoal">{name}</span>
         <span className="text-[11px] text-charcoal-soft">きょう {formatDurationShort(todaySeconds)}</span>

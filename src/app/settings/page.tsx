@@ -24,6 +24,7 @@ export default async function SettingsPage() {
           initialDisplayName={user.displayName}
           initialRibbonColor={user.rabbit?.ribbonColor ?? "CREAM"}
           energy={energy}
+          equippedItem={user.rabbit?.equippedItemId ?? null}
         />
 
         <Link

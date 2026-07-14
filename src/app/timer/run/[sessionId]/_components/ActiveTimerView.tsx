@@ -18,6 +18,7 @@ type Props = {
   nowMs: number;
   rabbitName: string;
   ribbonColor: RibbonColor;
+  equippedItem: string | null;
   energy: number;
   celebrate: boolean;
   onPause: () => void;
@@ -43,6 +44,7 @@ export default function ActiveTimerView({
   nowMs,
   rabbitName,
   ribbonColor,
+  equippedItem,
   energy,
   celebrate,
   onPause,
@@ -90,6 +92,7 @@ export default function ActiveTimerView({
         energy={energy}
         name={rabbitName}
         ribbonColor={ribbonColor}
+        equippedItem={equippedItem}
         size="lg"
         celebrate={celebrate}
       />

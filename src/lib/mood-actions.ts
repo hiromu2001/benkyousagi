@@ -4,9 +4,11 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/dal";
 import { jstDateKey } from "@/lib/jst";
 import { asMoodLevel, type MoodLevel } from "@/lib/mood";
+import { CoinReason } from "@/generated/prisma";
+import { COIN_MOOD_CHECKIN_BONUS } from "@/lib/shop";
 
 export type SubmitMoodResult =
-  | { status: "created"; level: MoodLevel }
+  | { status: "created"; level: MoodLevel; earnedCoins: number }
   | { status: "already"; level: MoodLevel; message: string }
   | { status: "error"; message: string };
 
@@ -36,9 +38,18 @@ export async function submitMoodAction(rawLevel: number): Promise<SubmitMoodResu
     }
 
     try {
-      await db.moodEntry.create({
-        data: { userId: user.id, moodDate, level },
-      });
+      // REQUIREMENTS.md 3-7-2節: きぶんチェックイン回答で+10コイン。MoodEntry作成と同一トランザクションで
+      // 加算し、(userId, reason, refId=moodDate)の一意制約で二重加算を防ぐ(MoodEntry自体の一意制約と二重の保険)。
+      await db.$transaction([
+        db.moodEntry.create({ data: { userId: user.id, moodDate, level } }),
+        db.coinTransaction.create({
+          data: { userId: user.id, amount: COIN_MOOD_CHECKIN_BONUS, reason: CoinReason.MOOD_CHECKIN, refId: moodDate },
+        }),
+        db.user.update({
+          where: { id: user.id },
+          data: { coinBalance: { increment: COIN_MOOD_CHECKIN_BONUS } },
+        }),
+      ]);
     } catch {
       // @@unique([userId, moodDate]) 競合(二重タップ等)時は先勝ちにして「もう答えたよ」を返す。
       const raced = await db.moodEntry.findUnique({
@@ -51,7 +62,7 @@ export async function submitMoodAction(rawLevel: number): Promise<SubmitMoodResu
       return { status: "error", message: "うまく とどかなかったみたい…もういちど ためしてね" };
     }
 
-    return { status: "created", level };
+    return { status: "created", level, earnedCoins: COIN_MOOD_CHECKIN_BONUS };
   } catch {
     return { status: "error", message: "うまく とどかなかったみたい…もういちど ためしてね" };
   }

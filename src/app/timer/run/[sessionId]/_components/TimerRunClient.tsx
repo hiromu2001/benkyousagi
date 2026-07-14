@@ -13,6 +13,7 @@ import {
   energyGainForDuration,
 } from "@/lib/rabbit-status";
 import { HEARTBEAT_INTERVAL_MS } from "@/lib/timer-config";
+import { COIN_PER_MINUTE, COIN_COMPLETION_BONUS } from "@/lib/shop";
 import {
   buildInitialState,
   isMeasuring,
@@ -42,6 +43,7 @@ type Props = {
   config: RunConfig;
   rabbitName: string;
   ribbonColor: RibbonColor;
+  equippedItem: string | null;
   baselineEnergy: number;
 };
 
@@ -68,6 +70,7 @@ export default function TimerRunClient({
   config,
   rabbitName,
   ribbonColor,
+  equippedItem,
   baselineEnergy,
 }: Props) {
   const [engineState, dispatch] = useReducer(
@@ -207,16 +210,22 @@ export default function TimerRunClient({
   );
 
   // 楽観的UI: サーバーでの確定(endSessionAction)を待たずに、終了操作の瞬間から完了画面を出す。
-  // 記録時間・元気度はクライアント側で同じ計算式により算出済みなので表示に不足はなく、
-  // DB確定は裏で進む(失敗しても上のリトライ+異常終了救済がセーフティネットになる)。
+  // 記録時間・元気度・コインはクライアント側で同じ計算式(session-finalize.tsと揃えている)により
+  // 算出済みなので表示に不足はなく、DB確定は裏で進む(失敗しても上のリトライ+異常終了救済がセーフティネット)。
   if (engineState.endingPhase === "finalizing" || engineState.endingPhase === "done") {
+    const reason = engineState.pendingEndReason ?? "MANUAL";
+    const optimisticCoins =
+      Math.floor(liveStudySeconds / 60) * COIN_PER_MINUTE +
+      (reason === "COMPLETED" ? COIN_COMPLETION_BONUS : 0);
     return (
       <CompletionView
-        reason={engineState.pendingEndReason ?? "MANUAL"}
+        reason={reason}
         durationMs={engineState.pendingDurationMs ?? 0}
         rabbitName={rabbitName}
         ribbonColor={ribbonColor}
+        equippedItem={equippedItem}
         energy={optimisticEnergy}
+        earnedCoins={optimisticCoins}
       />
     );
   }
@@ -228,6 +237,7 @@ export default function TimerRunClient({
         nowMs={nowMs}
         rabbitName={rabbitName}
         ribbonColor={ribbonColor}
+        equippedItem={equippedItem}
         energy={optimisticEnergy}
         celebrate={celebrate}
         onPause={() => dispatch({ type: "PAUSE", nowMs: Date.now() })}
@@ -239,6 +249,7 @@ export default function TimerRunClient({
         <InactivityDialog
           rabbitName={rabbitName}
           ribbonColor={ribbonColor}
+          equippedItem={equippedItem}
           energy={optimisticEnergy}
           onContinue={() => dispatch({ type: "DIALOG_CONTINUE", nowMs: Date.now() })}
           onEnd={() => dispatch({ type: "REQUEST_END", nowMs: Date.now() })}

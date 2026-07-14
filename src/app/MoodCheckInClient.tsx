@@ -4,9 +4,9 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
 import Rabbit from "@/components/rabbit/Rabbit";
+import { Carrot } from "@/components/rabbit/Carrot";
 import { submitMoodAction } from "@/lib/mood-actions";
 import { MOOD_CONFIG, MOOD_LEVELS_DESC, MOOD_REPLIES, type MoodLevel } from "@/lib/mood";
-import { PALETTE } from "@/lib/theme";
 
 // 「きょうのきぶん」チェックイン + うさぎ本体の表示。
 // うさぎを含めてクライアント側に持つのは、回答した瞬間に celebrate(ジャンプ+ハート)を
@@ -18,44 +18,17 @@ type Props = {
   energy: number;
   rabbitName: string;
   ribbonColor: "PINK" | "LAVENDER" | "MINT" | "CREAM";
+  equippedItem: string | null;
   stageLabel: string;
   stageMessage: string;
   initialMoodLevel: MoodLevel | null;
 };
 
-// にんじん(強調色 apricot はもともと「にんじん等」用のトークン。globals.css 参照)。
-function Carrot({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 48 64" className={className} aria-hidden>
-      <path
-        d="M24 60 C 16 48 12 35 13 25 C 14 17 19 13 24 13 C 29 13 34 17 35 25 C 36 35 32 48 24 60 Z"
-        fill={PALETTE.apricot}
-        stroke={PALETTE.charcoal}
-        strokeWidth={4}
-        strokeLinejoin="round"
-      />
-      <path
-        d="M23 14 C 19 6 13 3 7 5 C 10 11 16 14 23 14 Z"
-        fill={PALETTE.mint}
-        stroke={PALETTE.charcoal}
-        strokeWidth={3.5}
-        strokeLinejoin="round"
-      />
-      <path
-        d="M25 14 C 29 6 35 3 41 5 C 38 11 32 14 25 14 Z"
-        fill={PALETTE.mint}
-        stroke={PALETTE.charcoal}
-        strokeWidth={3.5}
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export default function MoodCheckInClient({
   energy,
   rabbitName,
   ribbonColor,
+  equippedItem,
   stageLabel,
   stageMessage,
   initialMoodLevel,
@@ -63,6 +36,7 @@ export default function MoodCheckInClient({
   const [phase, setPhase] = useState<Phase>(initialMoodLevel !== null ? "answered" : "ask");
   const [mood, setMood] = useState<MoodLevel | null>(initialMoodLevel);
   const [justAnswered, setJustAnswered] = useState(false);
+  const [earnedCoins, setEarnedCoins] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [celebrating, setCelebrating] = useState(false);
@@ -93,6 +67,7 @@ export default function MoodCheckInClient({
         }
         // 回答成功: にんじんを食べる → ジャンプ+ハート → ひとこと、の順で見せる。
         setJustAnswered(true);
+        setEarnedCoins(result.earnedCoins);
         setPhase("eating");
         timersRef.current.push(window.setTimeout(() => setCelebrating(true), 900));
         timersRef.current.push(window.setTimeout(() => setPhase("answered"), 1600));
@@ -111,6 +86,7 @@ export default function MoodCheckInClient({
             energy={energy}
             name={rabbitName}
             ribbonColor={ribbonColor}
+            equippedItem={equippedItem}
             size="lg"
             celebrate={celebrating}
           />
@@ -217,6 +193,11 @@ export default function MoodCheckInClient({
                 きょうのきぶん{" "}
                 <span aria-hidden>{MOOD_CONFIG[mood].emoji}</span> {MOOD_CONFIG[mood].label}
               </span>
+              {justAnswered && earnedCoins > 0 && (
+                <span className="rounded-full bg-apricot/40 px-3 py-1 text-[11px] font-bold text-charcoal">
+                  +{earnedCoins} コイン
+                </span>
+              )}
               <p className="text-xs leading-relaxed text-charcoal-soft">
                 {notice ?? (justAnswered ? MOOD_REPLIES[mood] : "また あした も きかせてね")}
               </p>

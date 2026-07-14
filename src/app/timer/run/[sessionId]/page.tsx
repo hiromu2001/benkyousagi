@@ -117,6 +117,7 @@ export default async function TimerRunPage({
       config={config}
       rabbitName={rabbit?.name ?? "おもち"}
       ribbonColor={rabbit?.ribbonColor ?? "CREAM"}
+      equippedItem={rabbit?.equippedItemId ?? null}
       baselineEnergy={baselineEnergy}
     />
   );
