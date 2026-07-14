@@ -87,14 +87,14 @@ export default function MoodCheckInClient({
             name={rabbitName}
             ribbonColor={ribbonColor}
             equippedItem={equippedItem}
-            size="md"
+            size="lg"
             celebrate={celebrating}
           />
           <AnimatePresence>
             {phase === "eating" && (
               <motion.div
                 key="carrot"
-                className="pointer-events-none absolute bottom-[24%] right-[4%] h-10 w-10"
+                className="pointer-events-none absolute bottom-[24%] right-[4%] h-14 w-14"
                 initial={{ opacity: 0, scale: 0.3, y: 16, rotate: -10 }}
                 animate={{
                   opacity: [0, 1, 1, 1, 1, 0],
@@ -118,9 +118,9 @@ export default function MoodCheckInClient({
 
       <p className="max-w-xs text-sm leading-relaxed text-charcoal-soft">{stageMessage}</p>
 
-      {/* min-hで最も背の高い"ask"状態ぶんの高さを確保し、"answered"に切り替わった時に
-          下のボタン群がガクッと詰まって見えるのを防ぐ(高さの近似値。厳密な計測はしていない)。 */}
-      <div className="flex w-full min-h-[150px] flex-col items-center justify-center">
+      {/* min-hは"answered"状態(いちばん多く表示される)の高さに合わせている。
+          "ask"状態はこれより背が高いため、初回だけ下のボタン群が少し詰まって見える(許容)。 */}
+      <div className="flex w-full min-h-[84px] flex-col items-center justify-center">
         <AnimatePresence mode="wait" initial={false}>
           {phase === "ask" && (
             <motion.section

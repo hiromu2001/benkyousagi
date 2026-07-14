@@ -48,6 +48,16 @@ const PHASES: Phase[] = [
     celebrate: true,
     caption: "タイマーを おすと「おかえり!」って、げんきいっぱいに なるよ",
   },
+  {
+    energy: 75,
+    celebrate: true,
+    caption: "1にち1かい「きょうのきぶん」を おしえてあげると、にんじんを たべて よろこぶよ",
+  },
+  {
+    energy: 55,
+    celebrate: false,
+    caption: "べんきょうすると コインも たまるよ。「おみせ」で アクセサリーや にんじんが かえるんだ",
+  },
 ];
 
 const PHASE_DURATION_MS = 2800;

@@ -8,6 +8,8 @@ type RabbitAvatarProps = {
 };
 
 // ログイン画面専用の簡易アイコン(凝ったうさぎ本体の描画は src/components/rabbit 側の担当)。
+// 2026-07-15: たれ耳ロップイヤーへのリニューアル(src/components/rabbit/RabbitParts.tsx)に合わせて
+// 耳・目まわりを更新(体は丸のまま、簡易アイコンとしての軽さは維持)。
 export function RabbitAvatar({ ribbonColorHex, size = 96, className }: RabbitAvatarProps) {
   const clipId = useId();
 
@@ -26,21 +28,30 @@ export function RabbitAvatar({ ribbonColorHex, size = 96, className }: RabbitAva
         </clipPath>
       </defs>
 
-      <ellipse cx="44" cy="30" rx="11" ry="23" fill={PALETTE.milk} stroke={PALETTE.charcoal} strokeWidth="5" transform="rotate(-16 44 30)" />
-      <ellipse cx="76" cy="30" rx="11" ry="23" fill={PALETTE.milk} stroke={PALETTE.charcoal} strokeWidth="5" transform="rotate(16 76 30)" />
-      <ellipse cx="44" cy="33" rx="5" ry="14" fill={PALETTE.pink} transform="rotate(-16 44 33)" />
-      <ellipse cx="76" cy="33" rx="5" ry="14" fill={PALETTE.pink} transform="rotate(16 76 33)" />
+      <g transform="translate(46 32) rotate(24)">
+        <ellipse cx="0" cy="21" rx="9" ry="21" fill={PALETTE.milk} stroke={PALETTE.charcoal} strokeWidth="4.5" />
+        <ellipse cx="0" cy="25" rx="4.5" ry="15" fill={PALETTE.pink} />
+      </g>
+      <g transform="translate(74 32) rotate(-24)">
+        <ellipse cx="0" cy="21" rx="9" ry="21" fill={PALETTE.milk} stroke={PALETTE.charcoal} strokeWidth="4.5" />
+        <ellipse cx="0" cy="25" rx="4.5" ry="15" fill={PALETTE.pink} />
+      </g>
 
       <circle cx="60" cy="66" r="42" fill={PALETTE.milk} stroke={PALETTE.charcoal} strokeWidth="5" />
 
       <rect x="14" y="88" width="92" height="24" rx="12" fill={ribbonColorHex} clipPath={`url(#${clipId})`} />
       <circle cx="60" cy="98" r="6" fill={ribbonColorHex} stroke={PALETTE.charcoal} strokeOpacity="0.15" strokeWidth="1.5" />
 
-      <circle cx="48" cy="64" r="3.2" fill={PALETTE.charcoal} />
-      <circle cx="72" cy="64" r="3.2" fill={PALETTE.charcoal} />
-      <circle cx="37" cy="76" r="6" fill={PALETTE.pinkDeep} opacity="0.55" />
-      <circle cx="83" cy="76" r="6" fill={PALETTE.pinkDeep} opacity="0.55" />
-      <path d="M54 75 Q60 80 66 75" stroke={PALETTE.charcoal} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <circle cx="39" cy="77" r="6" fill={PALETTE.pink} opacity="0.7" />
+      <circle cx="81" cy="77" r="6" fill={PALETTE.pink} opacity="0.7" />
+
+      <circle cx="51" cy="64" r="3.8" fill={PALETTE.charcoal} />
+      <circle cx="69" cy="64" r="3.8" fill={PALETTE.charcoal} />
+      <path
+        d="M57.5,69 C58.5,68.3 61.5,68.3 62.5,69 C62,70.8 61,71.8 60,71.8 C59,71.8 58,70.8 57.5,69 Z"
+        fill={PALETTE.pinkDeep}
+      />
+      <path d="M55,75 Q60,79 65,75" stroke={PALETTE.charcoal} strokeWidth="2.2" fill="none" strokeLinecap="round" />
     </svg>
   );
 }
