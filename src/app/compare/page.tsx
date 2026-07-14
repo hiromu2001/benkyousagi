@@ -194,7 +194,7 @@ export default async function ComparePage({
                       className="flex items-center justify-between text-xs text-charcoal-soft"
                     >
                       <span className="font-bold" style={{ color: isMe ? myColor : partnerColor }}>
-                        {isMe ? myName : partnerName}
+                        {isMe ? me.displayName : (partner?.displayName ?? "パートナー")}
                       </span>
                       <span>{formatRelativeJa(ev.loggedInAt, now)}</span>
                     </li>
