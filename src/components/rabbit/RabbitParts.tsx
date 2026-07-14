@@ -491,25 +491,43 @@ export function FlowerCrown() {
 }
 
 // アクセサリー第2弾(2026-07-15追加)。ピンクのリボンは既存のリボン/マフラー色選択(2-2節)とは
-// 別部位のヘアクリップとして固定ピンクで描画する(4色設定を上書きしない)。
+// 別部位として、頭のてっぺんに大きめのちょうちょ結びを乗せる形で固定ピンクで描画する
+// (4色設定を上書きしない)。2026-07-15: ユーザー提示の🎀参考画像に合わせ、頭頂中央・大きめ・
+// 丸みのあるロブ+ V字の垂れ尾+折り目のハイライトで絵文字寄りの形に変更。
 export function HairRibbon() {
   return (
-    <g transform="translate(150 56) rotate(14)">
+    <g transform="translate(120 60)">
       <path
-        d="M0,0 C-4,-7 -17,-8 -20,0 C-17,8 -4,7 0,0 Z"
+        d="M-5,-7 C-5,-30 -34,-42 -48,-23 C-60,-7 -53,21 -30,26 C-14,29 -5,16 -5,7 Z"
+        fill={PALETTE.pinkDeep}
+        stroke={PALETTE.charcoal}
+        strokeWidth={4}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5,-7 C5,-30 34,-42 48,-23 C60,-7 53,21 30,26 C14,29 5,16 5,7 Z"
+        fill={PALETTE.pinkDeep}
+        stroke={PALETTE.charcoal}
+        strokeWidth={4}
+        strokeLinejoin="round"
+      />
+      <path d="M-20,-19 Q-36,-5 -24,17" stroke={PALETTE.pink} strokeWidth={3.5} fill="none" strokeLinecap="round" opacity={0.75} />
+      <path d="M20,-19 Q36,-5 24,17" stroke={PALETTE.pink} strokeWidth={3.5} fill="none" strokeLinecap="round" opacity={0.75} />
+      <path
+        d="M-4,10 C-9,19 -11,30 -6,41 L0,31 Z"
         fill={PALETTE.pinkDeep}
         stroke={PALETTE.charcoal}
         strokeWidth={2.5}
         strokeLinejoin="round"
       />
       <path
-        d="M0,0 C4,-7 17,-8 20,0 C17,8 4,7 0,0 Z"
+        d="M4,10 C9,19 11,30 6,41 L0,31 Z"
         fill={PALETTE.pinkDeep}
         stroke={PALETTE.charcoal}
         strokeWidth={2.5}
         strokeLinejoin="round"
       />
-      <circle cx={0} cy={0} r={5.5} fill={PALETTE.pink} stroke={PALETTE.charcoal} strokeWidth={2.5} />
+      <ellipse cx={0} cy={0} rx={10} ry={15} fill={PALETTE.pink} stroke={PALETTE.charcoal} strokeWidth={4} />
     </g>
   );
 }
