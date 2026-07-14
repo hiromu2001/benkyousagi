@@ -28,6 +28,10 @@ export function RabbitAvatar({ ribbonColorHex, size = 96, className }: RabbitAva
         </clipPath>
       </defs>
 
+      <circle cx="60" cy="66" r="42" fill={PALETTE.milk} stroke={PALETTE.charcoal} strokeWidth="5" />
+
+      {/* たれ耳は頭のシルエットに大きく重なる形状のため、頭の円より後(手前)に描かないと
+          不透明な頭の塗りに隠れて見えなくなる(2026-07-15: 隠れて見えない不具合を修正)。 */}
       <g transform="translate(46 32) rotate(24)">
         <ellipse cx="0" cy="21" rx="9" ry="21" fill={PALETTE.milk} stroke={PALETTE.charcoal} strokeWidth="4.5" />
         <ellipse cx="0" cy="25" rx="4.5" ry="15" fill={PALETTE.pink} />
@@ -36,8 +40,6 @@ export function RabbitAvatar({ ribbonColorHex, size = 96, className }: RabbitAva
         <ellipse cx="0" cy="21" rx="9" ry="21" fill={PALETTE.milk} stroke={PALETTE.charcoal} strokeWidth="4.5" />
         <ellipse cx="0" cy="25" rx="4.5" ry="15" fill={PALETTE.pink} />
       </g>
-
-      <circle cx="60" cy="66" r="42" fill={PALETTE.milk} stroke={PALETTE.charcoal} strokeWidth="5" />
 
       <rect x="14" y="88" width="92" height="24" rx="12" fill={ribbonColorHex} clipPath={`url(#${clipId})`} />
       <circle cx="60" cy="98" r="6" fill={ribbonColorHex} stroke={PALETTE.charcoal} strokeOpacity="0.15" strokeWidth="1.5" />

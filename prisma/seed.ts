@@ -21,7 +21,10 @@ async function upsertUser(name: string | undefined, pin: string | undefined, fal
     create: {
       displayName,
       pinHash,
-      rabbit: { create: {} }, // デフォルト名「おもち」・元気度60で作成(schema.prisma のデフォルト値)
+      // オンボーディング未実施の間の初期名は「おもち」固定ではなく、アカウント名(ユーザー1/2等)に
+      // 揃える(2026-07-15: ログイン画面で誰のうさぎか分かりやすくするための変更)。
+      // オンボーディング完了時にユーザー自身が付けた名前で上書きされる。
+      rabbit: { create: { name: displayName } },
     },
   });
   console.log(`seeded user: ${user.displayName} (id=${user.id})`);
