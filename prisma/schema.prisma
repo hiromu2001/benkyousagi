@@ -201,14 +201,18 @@ model OwnedItem {
   @@unique([userId, itemId])
 }
 
-// ログイン履歴(2026-07-16追加)。「比較詳細画面」でお互いの最近のログインが見えるようにするための記録。
-// セッションは30日間有効(src/lib/session.ts)なので、これはアプリを開いた全アクセスではなく
-// PINでの明示的なログイン成功のみを記録する(loginAction参照)。
+// ログイン履歴(2026-07-16追加、同日再訪対応)。「比較詳細画面」でお互いの最近のアプリ利用が
+// 見えるようにするための記録。セッションは30日間有効(src/lib/session.ts)でPIN再入力なしの
+// 再訪が大半のため、PINでの明示的なログインだけでなく再訪(getCurrentUser経由)も対象にする。
+// 1ユーザー1日1行(visitDate=JST基準の日付)に集約し、再訪のたびにloggedInAtを最新時刻へ
+// 上書きする(毎回新規行にすると、よく使う方の履歴でリストが埋まってしまうため)。
 model LoginEvent {
   id         String   @id @default(cuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visitDate  String // JST基準 "YYYY-MM-DD"(src/lib/jst.tsのjstDateKey)
   loggedInAt DateTime @default(now())
 
+  @@unique([userId, visitDate])
   @@index([userId, loggedInAt])
 }

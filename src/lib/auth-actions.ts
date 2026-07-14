@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { createSession, deleteSession } from "@/lib/session";
 import { getCurrentUser } from "@/lib/dal";
+import { recordVisit } from "@/lib/visit-tracking";
 import { RibbonColor } from "@/generated/prisma";
 
 function isUniqueConstraintError(error: unknown): boolean {
@@ -101,8 +102,8 @@ export async function loginAction(
           data: { failedPinAttempts: 0, lockedUntil: null },
         })
       : Promise.resolve(),
-    // 比較詳細画面のログイン履歴用(REQUIREMENTS.md 5-1節)。
-    db.loginEvent.create({ data: { userId: user.id } }),
+    // 比較詳細画面のログイン履歴用(REQUIREMENTS.md 5-1節)。再訪分はgetCurrentUser側でも記録する。
+    recordVisit(user.id),
   ]);
   redirect("/");
 }
