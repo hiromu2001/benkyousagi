@@ -8,22 +8,23 @@ export type ShopItem = {
   name: string;
   price: number;
   category: ShopCategory;
-  emoji: string; // おみせ画面での簡易アイコン表示用
 };
 
 // 消耗品。購入すると即座にうさぎへあげる演出を再生する(所持記録は残さない)。
 export const CARROT_TREAT_ID = "carrot_treat";
 
 // 買い切りアクセサリー第1弾。装備スロットは「あたま・かお」の1枠のみ(同時装備1点)。
+// おみせ画面でのアイコンは絵文字ではなく、実際に装備した時と同じRabbitParts.tsxのSVGで表示する
+// (2026-07-15: 絵文字が実際の見た目と乖離していて分かりにくい、というフィードバックを受けて変更)。
 export const ACCESSORY_IDS = ["glasses", "beret", "nightcap", "flower_crown"] as const;
 export type AccessoryId = (typeof ACCESSORY_IDS)[number];
 
 export const SHOP_ITEMS: ShopItem[] = [
-  { id: CARROT_TREAT_ID, name: "おやつのにんじん", price: 20, category: "food", emoji: "🥕" },
-  { id: "glasses", name: "まるメガネ", price: 300, category: "accessory", emoji: "🤓" },
-  { id: "beret", name: "ベレー帽", price: 450, category: "accessory", emoji: "🎨" },
-  { id: "nightcap", name: "ナイトキャップ", price: 450, category: "accessory", emoji: "🌙" },
-  { id: "flower_crown", name: "花冠", price: 600, category: "accessory", emoji: "🌸" },
+  { id: CARROT_TREAT_ID, name: "おやつのにんじん", price: 20, category: "food" },
+  { id: "glasses", name: "まるメガネ", price: 300, category: "accessory" },
+  { id: "beret", name: "ベレー帽", price: 450, category: "accessory" },
+  { id: "nightcap", name: "ナイトキャップ", price: 450, category: "accessory" },
+  { id: "flower_crown", name: "花冠", price: 600, category: "accessory" },
 ];
 
 export function findShopItem(itemId: string): ShopItem | undefined {

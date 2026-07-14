@@ -34,6 +34,8 @@ export default function ShopClient({
   const [coinBalance, setCoinBalance] = useState(initialCoinBalance);
   const [equippedItem, setEquippedItem] = useState<string | null>(initialEquippedItem);
   const [ownedItemIds, setOwnedItemIds] = useState<Set<string>>(new Set(initialOwnedItemIds));
+  // 上のプレビューで「試着」するための一時選択(実際の装備とは別。ボタンで買う/そうびするまで確定しない)。
+  const [previewItem, setPreviewItem] = useState<AccessoryId | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [carrotPhase, setCarrotPhase] = useState<CarrotPhase>("idle");
   const [celebrating, setCelebrating] = useState(false);
@@ -109,7 +111,13 @@ export default function ShopClient({
         return;
       }
       setEquippedItem(next);
+      // 確定したら試着中プレビューは終了し、実際の装備状態をそのまま見せる。
+      setPreviewItem(null);
     });
+  }
+
+  function togglePreview(itemId: AccessoryId) {
+    setPreviewItem((prev) => (prev === itemId ? null : itemId));
   }
 
   const carrotItem = SHOP_ITEMS.find((item) => item.id === CARROT_TREAT_ID)!;
@@ -123,7 +131,7 @@ export default function ShopClient({
             energy={energy}
             name={rabbitName}
             ribbonColor={ribbonColor}
-            equippedItem={equippedItem}
+            equippedItem={previewItem ?? equippedItem}
             size="lg"
             celebrate={celebrating}
           />
@@ -150,6 +158,9 @@ export default function ShopClient({
         <span className="flex items-center gap-1 rounded-full bg-apricot/40 px-4 py-1.5 text-sm font-bold text-charcoal">
           <span aria-hidden>🪙</span> {coinBalance}
         </span>
+        {previewItem && (
+          <p className="text-[11px] text-charcoal-soft">しちゃくちゅう(まだ かってないよ)</p>
+        )}
       </div>
 
       <p
@@ -166,9 +177,7 @@ export default function ShopClient({
         <h2 className="mb-3 text-sm font-bold text-charcoal-soft">たべもの</h2>
         <div className="flex items-center justify-between gap-3 rounded-2xl bg-milk px-4 py-3 shadow-sm">
           <div className="flex items-center gap-3">
-            <span className="text-2xl" aria-hidden>
-              {carrotItem.emoji}
-            </span>
+            <Carrot className="h-8 w-8 shrink-0" />
             <div>
               <p className="text-sm font-bold text-charcoal">{carrotItem.name}</p>
               <p className="text-xs text-charcoal-soft">たべさせてあげよう(なんかいでも)</p>
@@ -192,26 +201,35 @@ export default function ShopClient({
         <h2 className="mb-3 text-sm font-bold text-charcoal-soft">みにつけるもの</h2>
         <div className="grid grid-cols-2 gap-3">
           {accessoryItems.map((item) => {
+            const itemId = item.id as AccessoryId;
             const owned = ownedItemIds.has(item.id);
             const equipped = equippedItem === item.id;
+            const previewing = previewItem === item.id;
             return (
               <div
                 key={item.id}
                 className={clsx(
-                  "flex flex-col items-center gap-1.5 rounded-2xl px-3 py-4 text-center shadow-sm",
+                  "flex flex-col items-center gap-1.5 rounded-2xl px-3 py-4 text-center shadow-sm transition",
                   equipped ? "bg-pink-deep/40" : "bg-milk",
+                  previewing && "ring-2 ring-apricot",
                 )}
               >
-                <span className="text-2xl" aria-hidden>
-                  {item.emoji}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => togglePreview(itemId)}
+                  aria-pressed={previewing}
+                  aria-label={`${item.name}を しちゃくする`}
+                  className="rounded-full transition active:scale-95"
+                >
+                  <Rabbit energy={energy} name={rabbitName} ribbonColor={ribbonColor} equippedItem={itemId} size="sm" />
+                </button>
                 <p className="text-sm font-bold text-charcoal">{item.name}</p>
                 {owned ? (
                   <>
                     <p className="text-[11px] text-charcoal-soft">もってるよ</p>
                     <button
                       type="button"
-                      onClick={() => toggleEquip(item.id as AccessoryId)}
+                      onClick={() => toggleEquip(itemId)}
                       disabled={isPending}
                       className={clsx(
                         "mt-1 w-full rounded-full px-3 py-1.5 text-xs font-bold shadow-sm transition active:scale-95 disabled:opacity-50",
@@ -224,7 +242,7 @@ export default function ShopClient({
                 ) : (
                   <button
                     type="button"
-                    onClick={() => buyAccessory(item.id as AccessoryId)}
+                    onClick={() => buyAccessory(itemId)}
                     disabled={isPending}
                     className={clsx(
                       "mt-1 w-full rounded-full px-3 py-1.5 text-xs font-bold shadow-sm transition active:scale-95 disabled:opacity-50",
