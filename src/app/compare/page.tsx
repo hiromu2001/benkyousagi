@@ -5,9 +5,9 @@ import { computeCurrentEnergy } from "@/lib/rabbit-status";
 import { RIBBON_COLOR_HEX, PALETTE } from "@/lib/theme";
 import Rabbit from "@/components/rabbit/Rabbit";
 import { getPeriodSummary, getTodaySeconds, weekRange, trailingDaysRange } from "@/lib/study-stats";
-import { jstDateKey, formatJstMonthDayJa, formatJstTime } from "@/lib/jst";
+import { jstDateKey } from "@/lib/jst";
 import { asMoodLevel, MOOD_CONFIG, type MoodLevel } from "@/lib/mood";
-import { formatDurationShort, formatDiffMinutes } from "@/lib/format";
+import { formatDurationShort, formatDiffMinutes, formatRelativeJa } from "@/lib/format";
 import { resolveDistinctPersonColors, hexToRgba } from "@/lib/chart-colors";
 import TimeSeriesBarChart from "@/components/charts/TimeSeriesBarChart";
 
@@ -196,9 +196,7 @@ export default async function ComparePage({
                       <span className="font-bold" style={{ color: isMe ? myColor : partnerColor }}>
                         {isMe ? myName : partnerName}
                       </span>
-                      <span>
-                        {formatJstMonthDayJa(ev.loggedInAt)} {formatJstTime(ev.loggedInAt)}
-                      </span>
+                      <span>{formatRelativeJa(ev.loggedInAt, now)}</span>
                     </li>
                   );
                 })}
