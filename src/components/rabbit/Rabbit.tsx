@@ -10,8 +10,10 @@ import {
   Ear,
   Eyes,
   Mouth,
+  Nose,
   Blush,
   Paws,
+  Tail,
   Ribbon,
   GroundShadow,
   Blanket,
@@ -123,11 +125,13 @@ export default function Rabbit({
                   wiggleDuration={config.earWiggleDuration}
                   bodyFill={BODY_FILL}
                 />
+                <Tail bodyFill={BODY_FILL} />
                 <path d={BODY_PATH} fill={BODY_FILL} stroke={PALETTE.charcoal} strokeWidth={5.5} strokeLinejoin="round" />
                 <Paws bodyFill={BODY_FILL} />
                 <Ribbon color={ribbonHex} />
                 {detailed && config.showBlanket && <Blanket />}
                 <Blush />
+                <Nose />
                 <Eyes shape={config.eyes} blinkDuration={config.blinkDuration} />
                 <Mouth shape={config.mouth} />
               </motion.g>

@@ -3,15 +3,17 @@ import { motion } from "framer-motion";
 import { PALETTE } from "@/lib/theme";
 import type { EyeShape, MouthShape } from "./rabbit-config";
 
-// 体≒顔のまんまるおもち型ボディ(2-2節)。楕円4点をベジェ近似(kappa=0.5523)して手描き感を保つ。
+// 体≒顔のドーム型ボディ(2026-07-15リニューアル: ちいかわ系のまんまる路線をやめ、
+// たれ耳ロップイヤーに個性を持たせる方向へ変更。ユーザーフィードバック反映)。
 export const BODY_PATH =
-  "M120,64 C166.4,64 204,98 204,140 C204,182 166.4,216 120,216 C73.6,216 36,182 36,140 C36,98 73.6,64 120,64 Z";
+  "M120,76 C158,76 180,116 184,164 C187,194 168,212 120,212 C72,212 53,194 56,164 C60,116 82,76 120,76 Z";
 
-const EYE_LEFT_X = 96;
-const EYE_RIGHT_X = 144;
-const EYE_Y = 128;
+// 目を大きく・中央寄りにして顔の余白を減らす(旧: 96/144の48px間隔 → 32px間隔)。
+const EYE_LEFT_X = 104;
+const EYE_RIGHT_X = 136;
+const EYE_Y = 126;
 const MOUTH_X = 120;
-const MOUTH_Y = 160;
+const MOUTH_Y = 150;
 
 function starPath(cx: number, cy: number, s: number) {
   return `M${cx},${cy - 5 * s} L${cx + 1.3 * s},${cy - 1.3 * s} L${cx + 5 * s},${cy} L${cx + 1.3 * s},${cy + 1.3 * s} L${cx},${cy + 5 * s} L${cx - 1.3 * s},${cy + 1.3 * s} L${cx - 5 * s},${cy} L${cx - 1.3 * s},${cy - 1.3 * s} Z`;
@@ -30,18 +32,19 @@ type EarProps = {
   bodyFill: string;
 };
 
-// 耳の回転軸はつけ根(ボディ側)。矩形は原点(0,0)を下端=つけ根としてローカル座標で描き、
-// motion.g の origin をバウンディングボックス比率(0.5,1)=下端中央に合わせることで
-// CSS transform-origin のあいまいさを避け、常につけ根を軸に回転させる。
+// たれ耳(ロップイヤー)。つけ根(頭側)を軸に、まっすぐ下に垂れた状態(restDeg=0)から
+// 元気度が上がるほど外側・斜め上へリフトする(restDegが大きいほど元気=旧仕様から符号反転)。
+// 楕円は原点(0,0)=つけ根を上端としてローカル座標で描き、motion.g の origin を
+// バウンディングボックス比率(0.5,0)=上端中央に合わせることで、常につけ根を軸に回転させる。
 export function Ear({ side, restDeg, wiggleDeg, wiggleDuration, bodyFill }: EarProps) {
-  const sign = side === "left" ? -1 : 1;
-  const baseX = side === "left" ? 90 : 150;
-  const rest = sign * (20 + restDeg);
+  const sign = side === "left" ? 1 : -1;
+  const rootX = side === "left" ? 85 : 155;
+  const rest = sign * restDeg;
   const peak = rest + sign * wiggleDeg;
   return (
-    <g transform={`translate(${baseX} 94)`}>
+    <g transform={`translate(${rootX} 90)`}>
       <motion.g
-        style={{ originX: 0.5, originY: 1 }}
+        style={{ originX: 0.5, originY: 0 }}
         initial={{ rotate: rest }}
         animate={{ rotate: [rest, peak, rest] }}
         transition={{
@@ -50,18 +53,16 @@ export function Ear({ side, restDeg, wiggleDeg, wiggleDuration, bodyFill }: EarP
           ease: "easeInOut",
         }}
       >
-        <rect
-          x={-15}
-          y={-80}
-          width={30}
-          height={80}
-          rx={15}
+        <ellipse
+          cx={0}
+          cy={42}
+          rx={14}
+          ry={42}
           fill={bodyFill}
           stroke={PALETTE.charcoal}
           strokeWidth={5}
-          strokeLinejoin="round"
         />
-        <rect x={-8} y={-66} width={16} height={52} rx={8} fill={PALETTE.pink} />
+        <ellipse cx={0} cy={48} rx={7} ry={31} fill={PALETTE.pink} />
       </motion.g>
     </g>
   );
@@ -111,7 +112,7 @@ export function Sparkle({
 
 export function Eyes({ shape, blinkDuration }: { shape: EyeShape; blinkDuration: number }) {
   if (shape === "dot" || shape === "dotHappy") {
-    const r = shape === "dotHappy" ? 7.5 : 6.5;
+    const r = shape === "dotHappy" ? 8.5 : 7.5;
     return (
       <BlinkPair duration={blinkDuration}>
         <circle cx={EYE_LEFT_X} cy={EYE_Y} r={r} fill={PALETTE.charcoal} />
@@ -143,8 +144,8 @@ export function Eyes({ shape, blinkDuration }: { shape: EyeShape; blinkDuration:
     const dy = 5;
     return (
       <BlinkPair duration={blinkDuration}>
-        <circle cx={EYE_LEFT_X} cy={EYE_Y + dy} r={6} fill={PALETTE.charcoal} />
-        <circle cx={EYE_RIGHT_X} cy={EYE_Y + dy} r={6} fill={PALETTE.charcoal} />
+        <circle cx={EYE_LEFT_X} cy={EYE_Y + dy} r={7} fill={PALETTE.charcoal} />
+        <circle cx={EYE_RIGHT_X} cy={EYE_Y + dy} r={7} fill={PALETTE.charcoal} />
         <line x1={EYE_LEFT_X - 7} y1={EYE_Y - 7} x2={EYE_LEFT_X + 4} y2={EYE_Y - 11} stroke={PALETTE.charcoal} strokeWidth={3} strokeLinecap="round" />
         <line x1={EYE_RIGHT_X - 4} y1={EYE_Y - 11} x2={EYE_RIGHT_X + 7} y2={EYE_Y - 7} stroke={PALETTE.charcoal} strokeWidth={3} strokeLinecap="round" />
       </BlinkPair>
@@ -178,10 +179,10 @@ export function Eyes({ shape, blinkDuration }: { shape: EyeShape; blinkDuration:
 
   return (
     <BlinkPair duration={blinkDuration}>
-      <circle cx={EYE_LEFT_X} cy={EYE_Y} r={7} fill={PALETTE.charcoal} />
-      <circle cx={EYE_RIGHT_X} cy={EYE_Y} r={7} fill={PALETTE.charcoal} />
-      <circle cx={EYE_LEFT_X - 2} cy={EYE_Y - 2} r={1.8} fill={PALETTE.milk} />
-      <circle cx={EYE_RIGHT_X - 2} cy={EYE_Y - 2} r={1.8} fill={PALETTE.milk} />
+      <circle cx={EYE_LEFT_X} cy={EYE_Y} r={8} fill={PALETTE.charcoal} />
+      <circle cx={EYE_RIGHT_X} cy={EYE_Y} r={8} fill={PALETTE.charcoal} />
+      <circle cx={EYE_LEFT_X - 2} cy={EYE_Y - 2} r={2} fill={PALETTE.milk} />
+      <circle cx={EYE_RIGHT_X - 2} cy={EYE_Y - 2} r={2} fill={PALETTE.milk} />
       <Sparkle cx={EYE_LEFT_X + 9} cy={EYE_Y - 9} scale={0.9} delay={0} />
       <Sparkle cx={EYE_RIGHT_X + 10} cy={EYE_Y - 11} scale={0.6} delay={0.4} />
     </BlinkPair>
@@ -217,11 +218,21 @@ export function Mouth({ shape }: { shape: MouthShape }) {
   );
 }
 
+// うさぎの鼻(2026-07-15リニューアル新要素)。表情段階によらず常時表示。
+export function Nose() {
+  return (
+    <path
+      d="M115.5,139.5 C117.5,138 122.5,138 124.5,139.5 C123.5,143 121.5,144.8 120,144.8 C118.5,144.8 116.5,143 115.5,139.5 Z"
+      fill={PALETTE.pinkDeep}
+    />
+  );
+}
+
 export function Blush() {
   return (
     <>
-      <ellipse cx={78} cy={152} rx={15} ry={10} fill={PALETTE.pinkDeep} opacity={0.55} />
-      <ellipse cx={162} cy={152} rx={15} ry={10} fill={PALETTE.pinkDeep} opacity={0.55} />
+      <ellipse cx={90} cy={147} rx={10} ry={7} fill={PALETTE.pink} opacity={0.8} />
+      <ellipse cx={150} cy={147} rx={10} ry={7} fill={PALETTE.pink} opacity={0.8} />
     </>
   );
 }
@@ -229,15 +240,20 @@ export function Blush() {
 export function Paws({ bodyFill }: { bodyFill: string }) {
   return (
     <>
-      <ellipse cx={92} cy={206} rx={17} ry={11} fill={bodyFill} stroke={PALETTE.charcoal} strokeWidth={4} />
-      <ellipse cx={148} cy={206} rx={17} ry={11} fill={bodyFill} stroke={PALETTE.charcoal} strokeWidth={4} />
+      <ellipse cx={98} cy={210} rx={13} ry={8} fill={bodyFill} stroke={PALETTE.charcoal} strokeWidth={4} />
+      <ellipse cx={142} cy={210} rx={13} ry={8} fill={bodyFill} stroke={PALETTE.charcoal} strokeWidth={4} />
     </>
   );
 }
 
+// まるいしっぽ(2026-07-15リニューアル新要素)。体の右斜め後ろに固定表示。
+export function Tail({ bodyFill }: { bodyFill: string }) {
+  return <circle cx={186} cy={198} r={12} fill={bodyFill} stroke={PALETTE.charcoal} strokeWidth={5} />;
+}
+
 export function Ribbon({ color }: { color: string }) {
   return (
-    <g transform="translate(120 188)">
+    <g transform="translate(120 180)">
       <path d="M0,0 C-4,-7 -20,-9 -24,0 C-20,9 -4,7 0,0 Z" fill={color} stroke={PALETTE.charcoal} strokeWidth={2.5} strokeLinejoin="round" />
       <path d="M0,0 C4,-7 20,-9 24,0 C20,9 4,7 0,0 Z" fill={color} stroke={PALETTE.charcoal} strokeWidth={2.5} strokeLinejoin="round" />
       <path d="M-3,10 C-6,16 -5,22 -2,26 L2,20 Z" fill={color} stroke={PALETTE.charcoal} strokeWidth={2} strokeLinejoin="round" />
@@ -248,24 +264,24 @@ export function Ribbon({ color }: { color: string }) {
 }
 
 export function GroundShadow() {
-  return <ellipse cx={120} cy={226} rx={66} ry={10} fill={PALETTE.charcoal} opacity={0.12} />;
+  return <ellipse cx={120} cy={224} rx={64} ry={10} fill={PALETTE.charcoal} opacity={0.12} />;
 }
 
 export function Blanket() {
   return (
     <g>
       <path
-        d="M42,172 Q120,152 198,172 L198,200 Q198,220 172,222 L68,222 Q42,220 42,200 Z"
+        d="M40,178 Q120,158 202,178 L202,204 Q202,224 176,226 L64,226 Q40,224 40,204 Z"
         fill={PALETTE.lavender}
         opacity={0.92}
         stroke={PALETTE.charcoal}
         strokeWidth={3.5}
         strokeLinejoin="round"
       />
-      <path d="M54,180 Q120,164 186,180" stroke={PALETTE.milk} strokeWidth={3} fill="none" opacity={0.6} strokeLinecap="round" />
-      <circle cx={80} cy={200} r={3} fill={PALETTE.milk} opacity={0.7} />
-      <circle cx={120} cy={208} r={3} fill={PALETTE.milk} opacity={0.7} />
-      <circle cx={160} cy={200} r={3} fill={PALETTE.milk} opacity={0.7} />
+      <path d="M52,186 Q120,170 190,186" stroke={PALETTE.milk} strokeWidth={3} fill="none" opacity={0.6} strokeLinecap="round" />
+      <circle cx={78} cy={204} r={3} fill={PALETTE.milk} opacity={0.7} />
+      <circle cx={120} cy={212} r={3} fill={PALETTE.milk} opacity={0.7} />
+      <circle cx={162} cy={204} r={3} fill={PALETTE.milk} opacity={0.7} />
     </g>
   );
 }

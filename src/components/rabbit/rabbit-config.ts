@@ -17,6 +17,8 @@ export type EyeShape =
 export type StageConfig = {
   mouth: MouthShape;
   eyes: EyeShape;
+  // たれ耳の角度(2026-07-15リニューアル)。0=まっすぐ下に垂れた状態、大きいほど
+  // 外側・斜め上へリフトした状態(=元気度が高いほど大きい値。旧仕様から符号反転)。
   earRestDeg: number;
   earWiggleDeg: number;
   earWiggleDuration: number;
@@ -36,7 +38,7 @@ export const STAGE_CONFIG: Record<EnergyStage, StageConfig> = {
   1: {
     mouth: "omegaSmall",
     eyes: "teary",
-    earRestDeg: 95,
+    earRestDeg: 6,
     earWiggleDeg: 2,
     earWiggleDuration: 4.5,
     breathScale: 0.012,
@@ -53,7 +55,7 @@ export const STAGE_CONFIG: Record<EnergyStage, StageConfig> = {
   2: {
     mouth: "he",
     eyes: "sadDown",
-    earRestDeg: 48,
+    earRestDeg: 14,
     earWiggleDeg: 3,
     earWiggleDuration: 4,
     breathScale: 0.015,
@@ -70,7 +72,7 @@ export const STAGE_CONFIG: Record<EnergyStage, StageConfig> = {
   3: {
     mouth: "omega",
     eyes: "dot",
-    earRestDeg: 12,
+    earRestDeg: 22,
     earWiggleDeg: 4,
     earWiggleDuration: 3.2,
     breathScale: 0.018,
@@ -87,7 +89,7 @@ export const STAGE_CONFIG: Record<EnergyStage, StageConfig> = {
   4: {
     mouth: "smileSmall",
     eyes: "dotHappy",
-    earRestDeg: 0,
+    earRestDeg: 32,
     earWiggleDeg: 6,
     earWiggleDuration: 2.6,
     breathScale: 0.02,
@@ -104,7 +106,7 @@ export const STAGE_CONFIG: Record<EnergyStage, StageConfig> = {
   5: {
     mouth: "smileBig",
     eyes: "curveHappy",
-    earRestDeg: -8,
+    earRestDeg: 44,
     earWiggleDeg: 10,
     earWiggleDuration: 1.6,
     breathScale: 0.024,
@@ -121,7 +123,7 @@ export const STAGE_CONFIG: Record<EnergyStage, StageConfig> = {
   6: {
     mouth: "smileBig",
     eyes: "sparkle",
-    earRestDeg: -10,
+    earRestDeg: 58,
     earWiggleDeg: 12,
     earWiggleDuration: 1.3,
     breathScale: 0.026,
