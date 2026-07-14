@@ -25,6 +25,7 @@ import { clearEngineState, loadEngineState, saveEngineState } from "../_lib/stor
 import ActiveTimerView from "./ActiveTimerView";
 import CompletionView from "./CompletionView";
 import InactivityDialog from "./InactivityDialog";
+import TimerHomeButton from "./TimerHomeButton";
 
 export type RunConfig =
   | { timerType: "COUNTUP" }
@@ -148,6 +149,18 @@ export default function TimerRunClient({
     };
   }, [sessionId]);
 
+  // タブを閉じる/リロードする操作は、ホームボタン(TimerHomeButton)の確認では防げないため、
+  // ブラウザ標準の離脱確認ダイアログで補う(3-3節: 記録がまだ確定していない状態での離脱に注意喚起)。
+  useEffect(() => {
+    if (engineState.endingPhase !== "active") return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [engineState.endingPhase]);
+
   // 状態が変わるたびに永続化(リロード/再訪時の復元用。REQUIREMENTS.md 4章)。
   useEffect(() => {
     if (engineState.endingPhase === "done") {
@@ -232,6 +245,7 @@ export default function TimerRunClient({
 
   return (
     <>
+      <TimerHomeButton />
       <ActiveTimerView
         state={engineState}
         nowMs={nowMs}

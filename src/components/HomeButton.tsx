@@ -4,9 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // ホーム画面自体では「ホームへもどる」ボタンは冗長なので出さない。
+// タイマー実行画面(/timer/run/[id])は、計測中に無確認でホームへ離脱されると記録が
+// まだ確定していない状態になる(REQUIREMENTS.md 3-3節)ため、専用の確認つきボタン
+// (TimerHomeButton, TimerRunClient.tsx)に譲り、こちらは出さない。
 export function HomeButton() {
   const pathname = usePathname();
-  if (pathname === "/") return null;
+  if (pathname === "/" || pathname.startsWith("/timer/run/")) return null;
 
   return (
     <Link
