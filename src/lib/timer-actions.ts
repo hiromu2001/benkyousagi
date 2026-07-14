@@ -117,6 +117,42 @@ export async function heartbeatAction(
   });
 }
 
+// 一時停止のたびに呼ぶ軽量action。pausedAtを立てることで、異常終了救済(recoverStaleSessionsForUser)が
+// 「一時停止中はハートビートが来ない」ことを異常終了と誤認しないようにする(3-3-1-1節)。
+export async function pauseSessionAction(
+  sessionId: string,
+  accumulatedSeconds: number,
+): Promise<void> {
+  const user = await getCurrentUser();
+  const safeSeconds = Math.max(0, Math.floor(accumulatedSeconds));
+  const now = new Date();
+
+  await db.studySession.updateMany({
+    where: { id: sessionId, userId: user.id, endedAt: null },
+    data: { pausedAt: now, lastHeartbeatAt: now, accumulatedSeconds: safeSeconds },
+  });
+}
+
+export async function resumeSessionAction(sessionId: string): Promise<void> {
+  const user = await getCurrentUser();
+
+  await db.studySession.updateMany({
+    where: { id: sessionId, userId: user.id, endedAt: null },
+    data: { pausedAt: null, lastHeartbeatAt: new Date() },
+  });
+}
+
+// REQUIREMENTS.md 3-3節: 間違ってタイマーを起動してしまった場合、記録を一切残さず破棄するための操作。
+// finalizeSession()と違いendedAtが未確定=まだうさぎ/コイン/日次集計への反映が一切起きていないため、
+// セッション行を削除するだけでよい(StudySessionTagはonDelete: Cascadeで連動削除される)。
+export async function discardSessionAction(sessionId: string): Promise<void> {
+  const user = await getCurrentUser();
+
+  await db.studySession.deleteMany({
+    where: { id: sessionId, userId: user.id, endedAt: null },
+  });
+}
+
 // heartbeatActionを「軽量」に保つため、ポモドーロの進捗(完了セット数・休憩スキップ数)は
 // 専用の軽量actionで随時同期する(セット完了・スキップの都度呼ばれる想定)。
 export async function updatePomodoroProgressAction(

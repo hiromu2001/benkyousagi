@@ -99,6 +99,11 @@ model StudySession {
   lastHeartbeatAt    DateTime @default(now())
   accumulatedSeconds Int      @default(0)
 
+  // 一時停止中かどうか(null=一時停止していない)。一時停止中はハートビートが来なくなるため、
+  // これが無いと上の異常終了救済が「意図的に長時間一時停止しているだけ」のセッションを
+  // 誤って異常終了とみなしてしまう(REQUIREMENTS.md 3-3-1-1: 一時停止中は監視対象外)。
+  pausedAt DateTime?
+
   // 実勉強時間（休憩・スキップ分・無操作猶予分を除いた確定時間）。
   // セッション進行中は null、確定時に秒数を書き込む。
   durationSeconds Int?

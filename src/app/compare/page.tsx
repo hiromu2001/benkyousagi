@@ -4,11 +4,17 @@ import { getCurrentUser } from "@/lib/dal";
 import { computeCurrentEnergy } from "@/lib/rabbit-status";
 import { RIBBON_COLOR_HEX, PALETTE } from "@/lib/theme";
 import Rabbit from "@/components/rabbit/Rabbit";
-import { getPeriodSummary, getTodaySeconds, weekRange, trailingDaysRange } from "@/lib/study-stats";
+import {
+  getPeriodSummary,
+  getTodaySeconds,
+  weekRange,
+  trailingDaysRange,
+  buildDailyTagBreakdown,
+} from "@/lib/study-stats";
 import { jstDateKey } from "@/lib/jst";
 import { asMoodLevel, MOOD_CONFIG, type MoodLevel } from "@/lib/mood";
 import { formatDurationShort, formatDiffMinutes, formatRelativeJa } from "@/lib/format";
-import { resolveDistinctPersonColors, hexToRgba } from "@/lib/chart-colors";
+import { resolveDistinctPersonColors, hexToRgba, tagColor, NO_TAG_COLOR } from "@/lib/chart-colors";
 import TimeSeriesBarChart from "@/components/charts/TimeSeriesBarChart";
 
 type Span = "week" | "month";
@@ -45,7 +51,7 @@ export default async function ComparePage({
   // 「きょうのきぶん」はJST基準の1日1回チェックイン(src/lib/mood.ts)。
   const moodDate = jstDateKey(now);
 
-  const [mySummary, partnerSummary, myToday, partnerToday, myMoodEntry, partnerMoodEntry, loginEvents] =
+  const [mySummary, partnerSummary, myToday, partnerToday, myMoodEntry, partnerMoodEntry, loginEvents, activeSessions] =
     await Promise.all([
       getPeriodSummary(me.id, range),
       partner ? getPeriodSummary(partner.id, range) : null,
@@ -67,10 +73,22 @@ export default async function ComparePage({
             select: { userId: true, loggedInAt: true },
           })
         : Promise.resolve([]),
+      // 「今べんきょう中」表示用: endedAt=nullのセッションが有るかどうか(一時停止中も含む。
+      // 一時停止はサーバーに送るpausedAtがあるがUI上は「タイマー使用中」で一括りにする)。
+      db.studySession.findMany({
+        where: {
+          userId: partner ? { in: [me.id, partner.id] } : me.id,
+          endedAt: null,
+        },
+        select: { userId: true, tags: { select: { tag: { select: { name: true } } } } },
+      }),
     ]);
 
   const myMood = asMoodLevel(myMoodEntry?.level);
   const partnerMood = asMoodLevel(partnerMoodEntry?.level);
+
+  const myActiveSession = activeSessions.find((s) => s.userId === me.id) ?? null;
+  const partnerActiveSession = partner ? activeSessions.find((s) => s.userId === partner.id) ?? null : null;
 
   const myColorRaw = me.rabbit ? RIBBON_COLOR_HEX[me.rabbit.ribbonColor] : PALETTE.pinkDeep;
   const partnerColorRaw = partner?.rabbit ? RIBBON_COLOR_HEX[partner.rabbit.ribbonColor] : PALETTE.lavender;
@@ -86,6 +104,12 @@ export default async function ComparePage({
   }));
 
   const diffSeconds = partner ? mySummary.totalSeconds - (partnerSummary?.totalSeconds ?? 0) : null;
+
+  // タグごとに色分けした日別内訳(REQUIREMENTS.md 3-6節: タグ機能)。
+  const myTagBreakdown = buildDailyTagBreakdown(mySummary.sessions, mySummary.dailyBreakdown);
+  const partnerTagBreakdown = partnerSummary
+    ? buildDailyTagBreakdown(partnerSummary.sessions, partnerSummary.dailyBreakdown)
+    : null;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4 pb-24">
@@ -111,6 +135,8 @@ export default async function ComparePage({
               periodSeconds={mySummary.totalSeconds}
               accentColor={myColor}
               moodLevel={myMood}
+              activeTagNames={myActiveSession?.tags.map((t) => t.tag.name) ?? null}
+              isStudying={myActiveSession !== null}
             />
             <PersonCard
               label="パートナー"
@@ -126,6 +152,8 @@ export default async function ComparePage({
               periodSeconds={partnerSummary?.totalSeconds ?? 0}
               accentColor={partnerColor}
               moodLevel={partnerMood}
+              activeTagNames={partnerActiveSession?.tags.map((t) => t.tag.name) ?? null}
+              isStudying={partnerActiveSession !== null}
             />
           </div>
 
@@ -182,6 +210,16 @@ export default async function ComparePage({
             </details>
           </section>
 
+          {(myTagBreakdown.tagNames.length > 0 || (partnerTagBreakdown?.tagNames.length ?? 0) > 0) && (
+            <section className="rounded-2xl border border-pink-deep/20 bg-milk p-4 shadow-sm">
+              <h2 className="mb-2 text-sm font-bold text-charcoal">タグ別の勉強時間の内訳</h2>
+              <TagCompositionChart label={myName} breakdown={myTagBreakdown} />
+              {partnerTagBreakdown && (
+                <TagCompositionChart label={partnerName} breakdown={partnerTagBreakdown} />
+              )}
+            </section>
+          )}
+
           {loginEvents.length > 0 && (
             <section className="rounded-2xl border border-pink-deep/20 bg-milk p-4 shadow-sm">
               <h2 className="mb-2 text-sm font-bold text-charcoal">ログイン履歴</h2>
@@ -219,6 +257,8 @@ function PersonCard({
   periodSeconds,
   accentColor,
   moodLevel,
+  isStudying,
+  activeTagNames,
 }: {
   label: string;
   name: string;
@@ -229,6 +269,8 @@ function PersonCard({
   periodSeconds: number;
   accentColor: string;
   moodLevel: MoodLevel | null;
+  isStudying: boolean;
+  activeTagNames: string[] | null;
 }) {
   return (
     <div
@@ -239,6 +281,17 @@ function PersonCard({
       <div className="flex flex-col leading-tight">
         <span className="text-[11px] font-bold text-charcoal-soft">{label}</span>
         <span className="text-sm font-bold text-charcoal">{name}</span>
+        {isStudying && (
+          <div className="mt-0.5 flex flex-col items-start gap-0.5">
+            <span className="inline-flex w-fit items-center gap-1 rounded-full bg-mint/70 px-2 py-0.5 text-[10px] font-bold text-charcoal">
+              <span className="inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-charcoal" aria-hidden />
+              べんきょう中
+            </span>
+            {activeTagNames && activeTagNames.length > 0 && (
+              <span className="text-[10px] leading-tight text-charcoal-soft">{activeTagNames.join("・")}</span>
+            )}
+          </div>
+        )}
         <span className="text-xs text-charcoal-soft">
           きぶん{" "}
           {moodLevel !== null ? (
@@ -251,6 +304,44 @@ function PersonCard({
         </span>
         <span className="text-xs text-charcoal-soft">きょう {formatDurationShort(todaySeconds)}</span>
         <span className="text-xs text-charcoal-soft">期間合計 {formatDurationShort(periodSeconds)}</span>
+      </div>
+    </div>
+  );
+}
+
+function TagCompositionChart({
+  label,
+  breakdown,
+}: {
+  label: string;
+  breakdown: ReturnType<typeof buildDailyTagBreakdown>;
+}) {
+  if (breakdown.tagNames.length === 0) return null;
+
+  return (
+    <div className="mt-3 first:mt-0">
+      <p className="mb-1 text-xs font-bold text-charcoal-soft">{label}</p>
+      <TimeSeriesBarChart
+        data={breakdown.data}
+        series={breakdown.tagNames.map((tagName) => ({
+          key: tagName,
+          name: tagName,
+          color: tagName === "タグなし" ? NO_TAG_COLOR : tagColor(tagName),
+        }))}
+        stacked
+        height={160}
+      />
+      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+        {breakdown.tagNames.map((tagName) => (
+          <span key={tagName} className="flex items-center gap-1 text-[11px] text-charcoal-soft">
+            <span
+              aria-hidden
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ backgroundColor: tagName === "タグなし" ? NO_TAG_COLOR : tagColor(tagName) }}
+            />
+            {tagName}
+          </span>
+        ))}
       </div>
     </div>
   );

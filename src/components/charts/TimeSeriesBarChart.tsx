@@ -48,10 +48,13 @@ export default function TimeSeriesBarChart({
   data,
   series,
   height = 220,
+  stacked = false,
 }: {
   data: TimeSeriesPoint[];
   series: BarSeries[];
   height?: number;
+  // タグ別の内訳など、複数系列を積み上げて「構成」を見せたい場合に指定する。
+  stacked?: boolean;
 }) {
   const showLegend = series.length > 1;
   // カテゴリ数が多い(月表示など)場合はラベルが重なるので間引く。
@@ -87,8 +90,16 @@ export default function TimeSeriesBarChart({
             formatter={(value: string) => <span className="text-xs text-charcoal-soft">{value}</span>}
           />
         )}
-        {series.map((s) => (
-          <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} radius={[4, 4, 0, 0]} maxBarSize={24} />
+        {series.map((s, i) => (
+          <Bar
+            key={s.key}
+            dataKey={s.key}
+            name={s.name}
+            fill={s.color}
+            radius={stacked && i < series.length - 1 ? [0, 0, 0, 0] : [4, 4, 0, 0]}
+            maxBarSize={24}
+            stackId={stacked ? "stack" : undefined}
+          />
         ))}
       </BarChart>
     </ResponsiveContainer>

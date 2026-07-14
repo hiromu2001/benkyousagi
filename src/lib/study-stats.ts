@@ -141,6 +141,29 @@ function buildTagBreakdown(sessions: ConfirmedSession[]): TagBreakdownPoint[] {
   return Array.from(tagTotals.values()).sort((a, b) => b.totalSeconds - a.totalSeconds);
 }
 
+export type DailyTagPoint = { label: string } & Record<string, number | string>;
+export type DailyTagBreakdown = { data: DailyTagPoint[]; tagNames: string[] };
+
+// 比較詳細画面(ふたりを見る)向け: 日ごと×タグごとの内訳(積み上げグラフ用)。
+// buildTagBreakdown()と違い、1セッションの時間を「付いている全タグ」に計上すると
+// 積み上げグラフの合計が実際の勉強時間より水増しされてしまう(構成が見た目で歪む)ため、
+// ここでは先頭のタグ1つだけに計上する(複数タグを付けた場合は代表タグとして扱う)。
+export function buildDailyTagBreakdown(sessions: ConfirmedSession[], days: DailyPoint[]): DailyTagBreakdown {
+  const tagNames = new Set<string>();
+  const data = days.map((day) => {
+    const row: DailyTagPoint = { label: day.label };
+    for (const session of sessions) {
+      if (!isSameJstDay(session.startedAt, day.date)) continue;
+      const duration = session.durationSeconds ?? 0;
+      const primaryTagName = session.tags.length > 0 ? session.tags[0].tag.name : NO_TAG_LABEL;
+      tagNames.add(primaryTagName);
+      row[primaryTagName] = (typeof row[primaryTagName] === "number" ? (row[primaryTagName] as number) : 0) + duration;
+    }
+    return row;
+  });
+  return { data, tagNames: Array.from(tagNames) };
+}
+
 // 期間内のセッションを一度だけ取得し、合計・日別・タグ別の内訳をまとめて算出する
 // (可視化画面・比較詳細画面のどちらも同じ形の集計を複数回に分けて問い合わせずに済むように)。
 export async function getPeriodSummary(userId: string, range: DateRange): Promise<PeriodSummary> {

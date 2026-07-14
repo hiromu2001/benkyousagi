@@ -5,6 +5,8 @@ import type { RibbonColor } from "@/generated/prisma";
 import {
   endSessionAction,
   heartbeatAction,
+  pauseSessionAction,
+  resumeSessionAction,
   updatePomodoroProgressAction,
 } from "@/lib/timer-actions";
 import {
@@ -91,6 +93,13 @@ export default function TimerRunClient({
 
   const lastHeartbeatSentAtRef = useRef(startedAtMs);
 
+  // 復元の試行が完了するまで、下の永続化effectに「復元前のフレッシュな状態」を保存させないためのガード。
+  // これが無いと、マウント直後の1回目のeffectフラッシュで永続化effectが先に走ってしまい
+  // (RESTOREのdispatchはrequestAnimationFrame後=次のフレーム以降のため間に合わない)、
+  // localStorageに保存されていた本来の状態(一時停止中など)が「フレッシュな新規状態」で
+  // 上書きされてしまう→直後の復元がその上書き後の値を読み込むため、一時停止が復元されない。
+  const hasAttemptedRestoreRef = useRef(false);
+
   // 初回マウント時: localStorageに保存済みの状態があれば復元、なければ新規開始として「おかえり」演出。
   // setState呼び出しをrequestAnimationFrameのコールバック内に置くことで、
   // 「effect本体で直接setStateする」形を避けている(react-hooks/set-state-in-effect対策)。
@@ -101,9 +110,11 @@ export default function TimerRunClient({
       const saved = loadEngineState(sessionId);
       if (saved) {
         dispatch({ type: "RESTORE", state: saved });
+        hasAttemptedRestoreRef.current = true;
         setNowMs(Date.now());
         return;
       }
+      hasAttemptedRestoreRef.current = true;
       setCelebrate(true);
       setNowMs(Date.now());
       celebrateTimer = setTimeout(() => setCelebrate(false), 2600);
@@ -162,7 +173,9 @@ export default function TimerRunClient({
   }, [engineState.endingPhase]);
 
   // 状態が変わるたびに永続化(リロード/再訪時の復元用。REQUIREMENTS.md 4章)。
+  // 復元の試行が終わるまでは保存しない(上のhasAttemptedRestoreRef参照)。
   useEffect(() => {
+    if (!hasAttemptedRestoreRef.current) return;
     if (engineState.endingPhase === "done") {
       clearEngineState(sessionId);
       return;
@@ -243,9 +256,22 @@ export default function TimerRunClient({
     );
   }
 
+  // 一時停止/再開はローカルのreducerに加え、サーバーにもpausedAtを反映しておく
+  // (3-3-1-1節: 一時停止中は異常終了救済の監視対象外にするため、サーバー側にも状態が必要)。
+  const handlePause = () => {
+    const pauseNowMs = Date.now();
+    const seconds = Math.floor(studyMsSoFar(engineStateRef.current, pauseNowMs) / 1000);
+    dispatch({ type: "PAUSE", nowMs: pauseNowMs });
+    pauseSessionAction(sessionId, seconds).catch(() => {});
+  };
+  const handleResume = () => {
+    dispatch({ type: "RESUME", nowMs: Date.now() });
+    resumeSessionAction(sessionId).catch(() => {});
+  };
+
   return (
     <>
-      <TimerHomeButton />
+      <TimerHomeButton sessionId={sessionId} />
       <ActiveTimerView
         state={engineState}
         nowMs={nowMs}
@@ -254,8 +280,8 @@ export default function TimerRunClient({
         equippedItem={equippedItem}
         energy={optimisticEnergy}
         celebrate={celebrate}
-        onPause={() => dispatch({ type: "PAUSE", nowMs: Date.now() })}
-        onResume={() => dispatch({ type: "RESUME", nowMs: Date.now() })}
+        onPause={handlePause}
+        onResume={handleResume}
         onSkip={() => dispatch({ type: "SKIP_BREAK", nowMs: Date.now() })}
         onEnd={() => dispatch({ type: "REQUEST_END", nowMs: Date.now() })}
       />

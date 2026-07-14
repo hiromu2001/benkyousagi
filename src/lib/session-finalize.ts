@@ -176,6 +176,9 @@ export async function logManualSession(
 }
 
 // 3-3-1-8節: 異常終了時の救済。endedAt=nullかつlastHeartbeatAtが古すぎるセッションを検知し確定する。
+// 一時停止中(pausedAt != null)のセッションは対象外(3-3-1-1節: 一時停止中は監視対象外)。
+// 一時停止中はハートビートが来ないため、放置してもlastHeartbeatAtが古くなるのは正常な状態であり、
+// 一時停止の長さに上限を設けない(意図的な長時間の一時停止を異常終了と誤認しない)。
 // 戻り値は救済した件数(0なら「救済は起きていない=直前に取得した表示用データは新鮮」と判断できる)。
 export async function recoverStaleSessionsForUser(userId: string): Promise<number> {
   const staleBefore = new Date(Date.now() - STALE_SESSION_RECOVERY_MS);
@@ -184,6 +187,7 @@ export async function recoverStaleSessionsForUser(userId: string): Promise<numbe
     where: {
       userId,
       endedAt: null,
+      pausedAt: null,
       lastHeartbeatAt: { lt: staleBefore },
     },
     select: { id: true, accumulatedSeconds: true },
