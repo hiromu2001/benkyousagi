@@ -31,6 +31,7 @@ enum EndReason {
   MANUAL // 手動での途中終了
   INACTIVITY_AUTO // 3時間無操作の確認に無応答で自動停止
   RECOVERED // アプリを閉じたまま等の異常終了を、次回起動時に救済確定
+  MANUAL_ENTRY // REQUIREMENTS.md 3-3-2節: タイマー未計測分の事後手入力(過去日への遡り不可)
 }
 
 // REQUIREMENTS.md 3-7節: コインの増減理由

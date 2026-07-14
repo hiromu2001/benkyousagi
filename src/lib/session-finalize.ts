@@ -1,7 +1,7 @@
 import "server-only";
 import { startOfJstDay } from "@/lib/jst";
 import { db } from "@/lib/db";
-import { EndReason, CoinReason } from "@/generated/prisma";
+import { EndReason, CoinReason, TimerType } from "@/generated/prisma";
 import {
   computeCurrentEnergy,
   energyAfterSessionStart,
@@ -100,6 +100,78 @@ export async function finalizeSession(
         data: { coinBalance: { increment: earnedCoins } },
       });
     }
+  });
+}
+
+// REQUIREMENTS.md 3-3-2節: タイマーを起動し忘れた分の事後手入力。finalizeSession()と違い、
+// 更新対象となる「計測中セッション」が存在しない(そもそも計測していない)ため、経過実時間による
+// クランプは行わず、常に「いま」を開始・終了時刻とするセッションを新規作成する。
+// 過去日への遡り入力を許さないのは、Rabbit.lastSessionEndAt(3-4節)が過去に巻き戻ると
+// 減衰計算の前提(単調増加)が崩れるため。元気度・当日集計・コイン加算はfinalizeSessionと
+// 同じ計算式を用いる(手入力だけ うさぎの状態が更新されない、という抜け漏れを避ける)。
+export async function logManualSession(
+  userId: string,
+  durationSeconds: number,
+  tagIds: string[],
+): Promise<{ earnedCoins: number }> {
+  const now = new Date();
+  const duration = Math.max(0, Math.floor(durationSeconds));
+
+  return db.$transaction(async (tx) => {
+    const session = await tx.studySession.create({
+      data: {
+        userId,
+        timerType: TimerType.COUNTUP,
+        startedAt: now,
+        endedAt: now,
+        lastHeartbeatAt: now,
+        accumulatedSeconds: duration,
+        durationSeconds: duration,
+        endReason: EndReason.MANUAL_ENTRY,
+        tags: tagIds.length > 0 ? { create: tagIds.map((tagId) => ({ tagId })) } : undefined,
+      },
+      select: { id: true },
+    });
+
+    const rabbit = await tx.rabbit.findUnique({ where: { userId } });
+    if (rabbit) {
+      const baselineEnergy = computeCurrentEnergy(rabbit.energy, rabbit.lastSessionEndAt, now);
+      const afterStartBonus = energyAfterSessionStart(baselineEnergy);
+      const newEnergy = clampEnergy(afterStartBonus + energyGainForDuration(duration));
+      await tx.rabbit.update({
+        where: { userId },
+        data: { energy: newEnergy, lastSessionEndAt: now },
+      });
+    }
+
+    const dateKey = startOfJstDay(now);
+    await tx.dailyAggregate.upsert({
+      where: { userId_date: { userId, date: dateKey } },
+      update: {
+        totalSeconds: { increment: duration },
+        sessionCount: { increment: 1 },
+      },
+      create: {
+        userId,
+        date: dateKey,
+        totalSeconds: duration,
+        sessionCount: 1,
+      },
+    });
+
+    // 3-3-2節: 完了ボーナスに相当する概念がないため、基本レート(1分+1コイン)のみ加算する。
+    const earnedCoins = Math.floor(duration / 60) * COIN_PER_MINUTE;
+    if (earnedCoins > 0) {
+      await tx.coinTransaction.create({
+        data: { userId, amount: earnedCoins, reason: CoinReason.STUDY_SESSION, refId: session.id },
+      });
+      await tx.user.update({
+        where: { id: userId },
+        data: { coinBalance: { increment: earnedCoins } },
+      });
+    }
+
+    return { earnedCoins };
   });
 }
 

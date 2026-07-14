@@ -3,22 +3,29 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { createTagAction, deleteTagAction, startSessionAction } from "@/lib/timer-actions";
+import {
+  createTagAction,
+  deleteTagAction,
+  logManualSessionAction,
+  startSessionAction,
+} from "@/lib/timer-actions";
 import {
   COUNTDOWN_MAX_MINUTES,
   COUNTDOWN_MIN_MINUTES,
+  MANUAL_ENTRY_MAX_MINUTES,
   POMODORO_PRESETS,
   POMODORO_PRESET_LABELS,
   type PomodoroPresetId,
 } from "@/lib/timer-config";
 
-type TimerMode = "COUNTUP" | "COUNTDOWN" | "POMODORO";
+type TimerMode = "COUNTUP" | "COUNTDOWN" | "POMODORO" | "MANUAL";
 type TagItem = { id: string; name: string };
 
 const MODE_OPTIONS: { value: TimerMode; label: string; description: string }[] = [
   { value: "COUNTUP", label: "カウントアップ", description: "じかんを気にせず、はかるだけ" },
   { value: "COUNTDOWN", label: "カウントダウン", description: "めあての時間を決めて集中" },
   { value: "POMODORO", label: "ポモドーロ", description: "さぎょうと休けいをくり返す" },
+  { value: "MANUAL", label: "手入力", description: "タイマーを忘れた時に、あとから記録" },
 ];
 
 export default function TimerSetupForm({ initialTags }: { initialTags: TagItem[] }) {
@@ -27,6 +34,7 @@ export default function TimerSetupForm({ initialTags }: { initialTags: TagItem[]
   const [mode, setMode] = useState<TimerMode>("COUNTUP");
   const [countdownMinutes, setCountdownMinutes] = useState(25);
   const [pomodoroPreset, setPomodoroPreset] = useState<PomodoroPresetId>("A");
+  const [manualMinutes, setManualMinutes] = useState(30);
 
   const [tags, setTags] = useState<TagItem[]>(initialTags);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -99,9 +107,37 @@ export default function TimerSetupForm({ initialTags }: { initialTags: TagItem[]
     }
   }
 
+  async function handleLogManual() {
+    if (isStarting) return;
+    setError(null);
+
+    if (
+      !Number.isFinite(manualMinutes) ||
+      manualMinutes <= 0 ||
+      manualMinutes > MANUAL_ENTRY_MAX_MINUTES
+    ) {
+      setError(`きろくする時間は1〜${MANUAL_ENTRY_MAX_MINUTES}分で入力してね`);
+      return;
+    }
+
+    setIsStarting(true);
+    try {
+      await logManualSessionAction(manualMinutes, selectedTagIds);
+      router.push("/");
+    } catch {
+      setError("きろくできなかったよ。もう一度ためしてね");
+      setIsStarting(false);
+    }
+  }
+
   async function handleStart() {
     if (isStarting) return;
     setError(null);
+
+    if (mode === "MANUAL") {
+      await handleLogManual();
+      return;
+    }
 
     if (mode === "COUNTDOWN") {
       if (
@@ -183,6 +219,24 @@ export default function TimerSetupForm({ initialTags }: { initialTags: TagItem[]
           />
           <p className="mt-2 text-xs text-charcoal-soft">
             {COUNTDOWN_MIN_MINUTES}〜{COUNTDOWN_MAX_MINUTES}分の間で設定してね
+          </p>
+        </section>
+      )}
+
+      {mode === "MANUAL" && (
+        <section>
+          <h2 className="mb-3 text-sm font-bold text-charcoal-soft">きろくする時間(分)</h2>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={MANUAL_ENTRY_MAX_MINUTES}
+            value={manualMinutes}
+            onChange={(e) => setManualMinutes(Number(e.target.value))}
+            className="w-32 rounded-xl bg-milk px-4 py-3 text-lg font-bold text-charcoal shadow-sm outline-none ring-pink-deep focus:ring-2"
+          />
+          <p className="mt-2 text-xs text-charcoal-soft">
+            日付はえらべず、「いま」の記録として追加されるよ(さかのぼっての入力はできないよ)
           </p>
         </section>
       )}
@@ -282,7 +336,13 @@ export default function TimerSetupForm({ initialTags }: { initialTags: TagItem[]
         disabled={isStarting}
         className="rounded-full bg-pink-deep px-8 py-4 text-lg font-bold text-charcoal shadow-sm transition active:scale-95 disabled:opacity-50"
       >
-        {isStarting ? "じゅんびちゅう..." : "はじめる"}
+        {mode === "MANUAL"
+          ? isStarting
+            ? "きろくちゅう..."
+            : "きろくする"
+          : isStarting
+            ? "じゅんびちゅう..."
+            : "はじめる"}
       </button>
     </div>
   );

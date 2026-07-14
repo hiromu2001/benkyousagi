@@ -4,9 +4,10 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/dal";
 import { TimerType } from "@/generated/prisma";
 import type { TimerType as TimerTypeValue } from "@/generated/prisma";
-import type { PomodoroPresetConfig } from "@/lib/timer-config";
+import { MANUAL_ENTRY_MAX_MINUTES, type PomodoroPresetConfig } from "@/lib/timer-config";
 import {
   finalizeSession,
+  logManualSession,
   recoverStaleSessionsForUser,
   type ManualEndReason,
 } from "@/lib/session-finalize";
@@ -74,6 +75,32 @@ export async function startSessionAction(
   });
 
   return { sessionId: session.id };
+}
+
+// REQUIREMENTS.md 3-3-2節: タイマーを起動し忘れた分の事後手入力。「いま」記録したセッションとして
+// 即座に確定する(過去日への遡り入力はしない)。
+export async function logManualSessionAction(
+  minutes: number,
+  tagIds: string[],
+): Promise<{ earnedCoins: number }> {
+  const user = await getCurrentUser();
+
+  const safeMinutes = Math.floor(minutes);
+  if (!Number.isFinite(safeMinutes) || safeMinutes <= 0 || safeMinutes > MANUAL_ENTRY_MAX_MINUTES) {
+    throw new Error(`きろくする時間は1〜${MANUAL_ENTRY_MAX_MINUTES}分で入力してください`);
+  }
+
+  const uniqueTagIds = [...new Set(tagIds)];
+  let ownedTagIds: string[] = [];
+  if (uniqueTagIds.length > 0) {
+    const ownedTags = await db.tag.findMany({
+      where: { id: { in: uniqueTagIds }, userId: user.id },
+      select: { id: true },
+    });
+    ownedTagIds = ownedTags.map((tag) => tag.id);
+  }
+
+  return logManualSession(user.id, safeMinutes * 60, ownedTagIds);
 }
 
 // 3-3-1節: 計測中のみ60秒ごとに呼ばれる軽量action。lastHeartbeatAt/accumulatedSecondsの更新のみ行う。

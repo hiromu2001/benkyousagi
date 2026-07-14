@@ -14,6 +14,9 @@ export const STALE_SESSION_RECOVERY_MS =
 export const COUNTDOWN_MIN_MINUTES = 1;
 export const COUNTDOWN_MAX_MINUTES = 180;
 
+// REQUIREMENTS.md 3-3-2節: 手入力での事後記録の1回あたり上限(入力ミスの歯止め、実装時に調整可能)。
+export const MANUAL_ENTRY_MAX_MINUTES = 720;
+
 export type PomodoroPresetId = "A" | "B";
 
 export type PomodoroPresetConfig = {
