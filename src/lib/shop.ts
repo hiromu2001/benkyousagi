@@ -16,7 +16,14 @@ export const CARROT_TREAT_ID = "carrot_treat";
 // 買い切りアクセサリー第1弾。装備スロットは「あたま・かお」の1枠のみ(同時装備1点)。
 // おみせ画面でのアイコンは絵文字ではなく、実際に装備した時と同じRabbitParts.tsxのSVGで表示する
 // (2026-07-15: 絵文字が実際の見た目と乖離していて分かりにくい、というフィードバックを受けて変更)。
-export const ACCESSORY_IDS = ["glasses", "beret", "nightcap", "flower_crown"] as const;
+export const ACCESSORY_IDS = [
+  "glasses",
+  "beret",
+  "nightcap",
+  "flower_crown",
+  "hair_ribbon",
+  "star_clip",
+] as const;
 export type AccessoryId = (typeof ACCESSORY_IDS)[number];
 
 export const SHOP_ITEMS: ShopItem[] = [
@@ -25,6 +32,9 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: "beret", name: "ベレー帽", price: 450, category: "accessory" },
   { id: "nightcap", name: "ナイトキャップ", price: 450, category: "accessory" },
   { id: "flower_crown", name: "花冠", price: 600, category: "accessory" },
+  // 第2弾(2026-07-15追加)
+  { id: "hair_ribbon", name: "ピンクのリボン", price: 250, category: "accessory" },
+  { id: "star_clip", name: "ほしのヘアピン", price: 300, category: "accessory" },
 ];
 
 export function findShopItem(itemId: string): ShopItem | undefined {

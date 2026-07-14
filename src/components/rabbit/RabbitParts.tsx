@@ -489,3 +489,39 @@ export function FlowerCrown() {
     </g>
   );
 }
+
+// アクセサリー第2弾(2026-07-15追加)。ピンクのリボンは既存のリボン/マフラー色選択(2-2節)とは
+// 別部位のヘアクリップとして固定ピンクで描画する(4色設定を上書きしない)。
+export function HairRibbon() {
+  return (
+    <g transform="translate(150 56) rotate(14)">
+      <path
+        d="M0,0 C-4,-7 -17,-8 -20,0 C-17,8 -4,7 0,0 Z"
+        fill={PALETTE.pinkDeep}
+        stroke={PALETTE.charcoal}
+        strokeWidth={2.5}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M0,0 C4,-7 17,-8 20,0 C17,8 4,7 0,0 Z"
+        fill={PALETTE.pinkDeep}
+        stroke={PALETTE.charcoal}
+        strokeWidth={2.5}
+        strokeLinejoin="round"
+      />
+      <circle cx={0} cy={0} r={5.5} fill={PALETTE.pink} stroke={PALETTE.charcoal} strokeWidth={2.5} />
+    </g>
+  );
+}
+
+export function StarClip() {
+  return (
+    <path
+      d={starPath(92, 60, 3.4)}
+      fill={PALETTE.apricot}
+      stroke={PALETTE.charcoal}
+      strokeWidth={2}
+      strokeLinejoin="round"
+    />
+  );
+}

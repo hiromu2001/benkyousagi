@@ -25,6 +25,8 @@ import {
   Beret,
   Nightcap,
   FlowerCrown,
+  HairRibbon,
+  StarClip,
 } from "./RabbitParts";
 import { isAccessoryId, type AccessoryId } from "@/lib/shop";
 
@@ -42,6 +44,8 @@ const ACCESSORY_COMPONENTS: Record<AccessoryId, () => React.JSX.Element> = {
   beret: Beret,
   nightcap: Nightcap,
   flower_crown: FlowerCrown,
+  hair_ribbon: HairRibbon,
+  star_clip: StarClip,
 };
 
 function Accessory({ itemId }: { itemId?: string | null }) {
