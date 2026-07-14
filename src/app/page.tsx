@@ -76,11 +76,11 @@ export default async function Home() {
         }}
       />
 
-      <div className="relative z-10 px-5 pt-4 sm:px-8">
+      <div className="relative z-10 px-5 pt-2 sm:px-8">
         <ComparisonWidget />
       </div>
 
-      <header className="relative z-10 flex items-center justify-between px-5 pt-3 sm:px-8">
+      <header className="relative z-10 flex items-center justify-between px-5 pt-1.5 sm:px-8">
         <p className="text-sm text-charcoal-soft">
           おかえり、<span className="font-bold text-charcoal">{user.displayName}</span>さん
         </p>
@@ -109,7 +109,7 @@ export default async function Home() {
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-5 px-6 pb-10 text-center">
+      <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-3 px-6 pb-4 text-center">
         <MoodCheckInClient
           energy={energy}
           rabbitName={rabbit.name}
@@ -122,12 +122,12 @@ export default async function Home() {
 
         <Link
           href={activeSession ? `/timer/run/${activeSession.id}` : "/timer"}
-          className="mt-2 w-full rounded-full bg-apricot px-8 py-4 text-center text-lg font-bold text-charcoal shadow-md transition-transform active:scale-95 sm:hover:scale-[1.02]"
+          className="w-full rounded-full bg-apricot px-8 py-3.5 text-center text-lg font-bold text-charcoal shadow-md transition-transform active:scale-95 sm:hover:scale-[1.02]"
         >
           {activeSession ? "つづきからはじめる" : "タイマーをはじめる"}
         </Link>
 
-        <nav className="mt-2 flex gap-5 text-sm text-charcoal-soft">
+        <nav className="flex gap-5 text-sm text-charcoal-soft">
           <Link href="/history" className="underline-offset-4 hover:underline">
             きろくをみる
           </Link>

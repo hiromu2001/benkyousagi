@@ -50,7 +50,7 @@ export default async function ComparisonWidget() {
     <Link
       href="/compare"
       aria-label="ふたりの勉強くらべを詳しく見る"
-      className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-pink-deep/25 bg-milk/95 px-3 py-2.5 shadow-sm transition hover:shadow-md"
+      className="flex w-full flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-pink-deep/25 bg-milk/95 px-3 py-2 shadow-sm transition hover:shadow-md"
     >
       <span className="whitespace-nowrap text-xs font-bold text-charcoal-soft">ふたりの勉強くらべ</span>
 

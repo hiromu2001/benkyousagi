@@ -87,14 +87,14 @@ export default function MoodCheckInClient({
             name={rabbitName}
             ribbonColor={ribbonColor}
             equippedItem={equippedItem}
-            size="lg"
+            size="md"
             celebrate={celebrating}
           />
           <AnimatePresence>
             {phase === "eating" && (
               <motion.div
                 key="carrot"
-                className="pointer-events-none absolute bottom-[24%] right-[4%] h-14 w-14"
+                className="pointer-events-none absolute bottom-[24%] right-[4%] h-10 w-10"
                 initial={{ opacity: 0, scale: 0.3, y: 16, rotate: -10 }}
                 animate={{
                   opacity: [0, 1, 1, 1, 1, 0],
@@ -110,7 +110,7 @@ export default function MoodCheckInClient({
             )}
           </AnimatePresence>
         </div>
-        <h1 className="mt-2 text-2xl font-bold text-charcoal">{rabbitName}</h1>
+        <h1 className="mt-1 text-xl font-bold text-charcoal">{rabbitName}</h1>
         <span className="rounded-full bg-pink/60 px-3 py-1 text-xs font-bold text-charcoal-soft">
           いま: {stageLabel}
         </span>
@@ -120,7 +120,7 @@ export default function MoodCheckInClient({
 
       {/* min-hで最も背の高い"ask"状態ぶんの高さを確保し、"answered"に切り替わった時に
           下のボタン群がガクッと詰まって見えるのを防ぐ(高さの近似値。厳密な計測はしていない)。 */}
-      <div className="flex w-full min-h-[180px] flex-col items-center justify-center">
+      <div className="flex w-full min-h-[150px] flex-col items-center justify-center">
         <AnimatePresence mode="wait" initial={false}>
           {phase === "ask" && (
             <motion.section
@@ -129,14 +129,14 @@ export default function MoodCheckInClient({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="w-full rounded-2xl border border-pink-deep/20 bg-milk p-4 shadow-sm"
+              className="w-full rounded-2xl border border-pink-deep/20 bg-milk p-3 shadow-sm"
               aria-label="きょうのきぶんチェックイン"
             >
               <p className="text-sm font-bold text-charcoal">きょうの きぶんは どう？</p>
               <p className="mt-1 text-[11px] text-charcoal-soft">
                 こたえると {rabbitName} に にんじんを あげられるよ
               </p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 {MOOD_LEVELS_DESC.map((level) => (
                   <button
                     key={level}
@@ -144,7 +144,7 @@ export default function MoodCheckInClient({
                     onClick={() => pick(level)}
                     disabled={isPending}
                     className={clsx(
-                      "rounded-2xl px-3 py-3 text-sm font-bold text-charcoal shadow-sm transition-transform active:scale-95 disabled:opacity-60 sm:hover:scale-[1.03]",
+                      "rounded-2xl px-3 py-2.5 text-sm font-bold text-charcoal shadow-sm transition-transform active:scale-95 disabled:opacity-60 sm:hover:scale-[1.03]",
                       MOOD_CONFIG[level].pickerClass,
                     )}
                   >
