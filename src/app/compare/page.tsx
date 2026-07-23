@@ -66,12 +66,15 @@ export default async function ComparePage({
           })
         : null,
       partner
-        ? db.loginEvent.findMany({
-            where: { userId: { in: [me.id, partner.id] } },
-            orderBy: { loggedInAt: "desc" },
-            take: 12,
-            select: { userId: true, loggedInAt: true },
-          })
+        ? Promise.all(
+            [me.id, partner.id].map((userId) =>
+              db.loginEvent.findFirst({
+                where: { userId },
+                orderBy: { loggedInAt: "desc" },
+                select: { userId: true, loggedInAt: true },
+              }),
+            ),
+          ).then((rows) => rows.filter((row): row is NonNullable<typeof row> => row !== null))
         : Promise.resolve([]),
       // 「今べんきょう中」表示用: endedAt=nullのセッションが有るかどうか(一時停止中も含む。
       // 一時停止はサーバーに送るpausedAtがあるがUI上は「タイマー使用中」で一括りにする)。
@@ -131,6 +134,7 @@ export default async function ComparePage({
               energy={me.rabbit ? computeCurrentEnergy(me.rabbit.energy, me.rabbit.lastSessionEndAt, now) : 0}
               ribbonColor={me.rabbit?.ribbonColor ?? "CREAM"}
               equippedItem={me.rabbit?.equippedItemId ?? null}
+              equippedOutfit={me.rabbit?.equippedOutfitId ?? null}
               todaySeconds={myToday}
               periodSeconds={mySummary.totalSeconds}
               accentColor={myColor}
@@ -148,6 +152,7 @@ export default async function ComparePage({
               }
               ribbonColor={partner.rabbit?.ribbonColor ?? "LAVENDER"}
               equippedItem={partner.rabbit?.equippedItemId ?? null}
+              equippedOutfit={partner.rabbit?.equippedOutfitId ?? null}
               todaySeconds={partnerToday}
               periodSeconds={partnerSummary?.totalSeconds ?? 0}
               accentColor={partnerColor}
@@ -222,7 +227,7 @@ export default async function ComparePage({
 
           {loginEvents.length > 0 && (
             <section className="rounded-2xl border border-pink-deep/20 bg-milk p-4 shadow-sm">
-              <h2 className="mb-2 text-sm font-bold text-charcoal">ログイン履歴</h2>
+              <h2 className="mb-2 text-sm font-bold text-charcoal">さいごに あそびにきたのは</h2>
               <ul className="flex flex-col gap-1.5">
                 {loginEvents.map((ev) => {
                   const isMe = ev.userId === me.id;
@@ -253,6 +258,7 @@ function PersonCard({
   energy,
   ribbonColor,
   equippedItem,
+  equippedOutfit,
   todaySeconds,
   periodSeconds,
   accentColor,
@@ -265,6 +271,7 @@ function PersonCard({
   energy: number;
   ribbonColor: RibbonColor;
   equippedItem: string | null;
+  equippedOutfit: string | null;
   todaySeconds: number;
   periodSeconds: number;
   accentColor: string;
@@ -277,7 +284,14 @@ function PersonCard({
       className="flex min-w-[13rem] flex-1 items-center gap-3 rounded-2xl p-3"
       style={{ backgroundColor: hexToRgba(accentColor, 0.15) }}
     >
-      <Rabbit size="md" energy={energy} name={name} ribbonColor={ribbonColor} equippedItem={equippedItem} />
+      <Rabbit
+        size="md"
+        energy={energy}
+        name={name}
+        ribbonColor={ribbonColor}
+        equippedItem={equippedItem}
+        equippedOutfit={equippedOutfit}
+      />
       <div className="flex flex-col leading-tight">
         <span className="text-[11px] font-bold text-charcoal-soft">{label}</span>
         <span className="text-sm font-bold text-charcoal">{name}</span>

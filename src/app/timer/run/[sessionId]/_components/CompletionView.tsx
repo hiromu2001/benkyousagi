@@ -13,6 +13,7 @@ type Props = {
   rabbitName: string;
   ribbonColor: RibbonColor;
   equippedItem: string | null;
+  equippedOutfit: string | null;
   energy: number;
   earnedCoins: number;
 };
@@ -27,13 +28,21 @@ export default function CompletionView({
   rabbitName,
   ribbonColor,
   equippedItem,
+  equippedOutfit,
   energy,
   earnedCoins,
 }: Props) {
   if (reason === "INACTIVITY_AUTO") {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 px-6 text-center">
-        <Rabbit energy={energy} name={rabbitName} ribbonColor={ribbonColor} equippedItem={equippedItem} size="sm" />
+        <Rabbit
+          energy={energy}
+          name={rabbitName}
+          ribbonColor={ribbonColor}
+          equippedItem={equippedItem}
+          equippedOutfit={equippedOutfit}
+          size="sm"
+        />
         <p className="text-charcoal-soft">
           しばらく操作がなかったので、そこまでの記録を保存したよ。
         </p>
@@ -87,6 +96,7 @@ export default function CompletionView({
           name={rabbitName}
           ribbonColor={ribbonColor}
           equippedItem={equippedItem}
+          equippedOutfit={equippedOutfit}
           size={isRich ? "lg" : "md"}
           celebrate
         />

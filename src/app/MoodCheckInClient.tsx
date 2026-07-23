@@ -5,7 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
 import Rabbit from "@/components/rabbit/Rabbit";
 import { Carrot } from "@/components/rabbit/Carrot";
+import { FURNITURE_COMPONENTS } from "@/components/rabbit/RoomFurniture";
 import { submitMoodAction } from "@/lib/mood-actions";
+import { isFurnitureId } from "@/lib/shop";
 import { MOOD_CONFIG, MOOD_LEVELS_DESC, MOOD_REPLIES, type MoodLevel } from "@/lib/mood";
 
 // 「きょうのきぶん」チェックイン + うさぎ本体の表示。
@@ -19,6 +21,9 @@ type Props = {
   rabbitName: string;
   ribbonColor: "PINK" | "LAVENDER" | "MINT" | "CREAM";
   equippedItem: string | null;
+  equippedOutfit: string | null;
+  roomLeftItemId: string | null;
+  roomBackItemId: string | null;
   stageLabel: string;
   stageMessage: string;
   initialMoodLevel: MoodLevel | null;
@@ -29,10 +34,15 @@ export default function MoodCheckInClient({
   rabbitName,
   ribbonColor,
   equippedItem,
+  equippedOutfit,
+  roomLeftItemId,
+  roomBackItemId,
   stageLabel,
   stageMessage,
   initialMoodLevel,
 }: Props) {
+  const LeftFurniture = isFurnitureId(roomLeftItemId) ? FURNITURE_COMPONENTS[roomLeftItemId] : null;
+  const BackFurniture = isFurnitureId(roomBackItemId) ? FURNITURE_COMPONENTS[roomBackItemId] : null;
   const [phase, setPhase] = useState<Phase>(initialMoodLevel !== null ? "answered" : "ask");
   const [mood, setMood] = useState<MoodLevel | null>(initialMoodLevel);
   const [justAnswered, setJustAnswered] = useState(false);
@@ -82,19 +92,32 @@ export default function MoodCheckInClient({
     <>
       <div className="flex flex-col items-center gap-1">
         <div className="relative">
-          <Rabbit
-            energy={energy}
-            name={rabbitName}
-            ribbonColor={ribbonColor}
-            equippedItem={equippedItem}
-            size="lg"
-            celebrate={celebrating}
-          />
+          {BackFurniture && (
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-center opacity-90">
+              <BackFurniture className="h-20 w-auto sm:h-24" />
+            </div>
+          )}
+          <div className="relative z-10">
+            <Rabbit
+              energy={energy}
+              name={rabbitName}
+              ribbonColor={ribbonColor}
+              equippedItem={equippedItem}
+              equippedOutfit={equippedOutfit}
+              size="lg"
+              celebrate={celebrating}
+            />
+          </div>
+          {LeftFurniture && (
+            <div className="pointer-events-none absolute bottom-0 left-0 z-10 translate-x-[-10%]">
+              <LeftFurniture className="h-14 w-auto sm:h-16" />
+            </div>
+          )}
           <AnimatePresence>
             {phase === "eating" && (
               <motion.div
                 key="carrot"
-                className="pointer-events-none absolute bottom-[24%] right-[4%] h-14 w-14"
+                className="pointer-events-none absolute bottom-[24%] right-[4%] z-20 h-14 w-14"
                 initial={{ opacity: 0, scale: 0.3, y: 16, rotate: -10 }}
                 animate={{
                   opacity: [0, 1, 1, 1, 1, 0],

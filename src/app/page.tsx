@@ -115,6 +115,9 @@ export default async function Home() {
           rabbitName={rabbit.name}
           ribbonColor={rabbit.ribbonColor}
           equippedItem={rabbit.equippedItemId}
+          equippedOutfit={rabbit.equippedOutfitId}
+          roomLeftItemId={rabbit.roomLeftItemId}
+          roomBackItemId={rabbit.roomBackItemId}
           stageLabel={stageLabel}
           stageMessage={message}
           initialMoodLevel={initialMoodLevel}

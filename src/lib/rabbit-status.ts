@@ -5,7 +5,12 @@
 export const ENERGY_MIN = 0;
 export const ENERGY_MAX = 100;
 
-export const START_BONUS = 20; // セッション開始の瞬間に即時加算
+// 2026-07-23: 20だと少しの勉強でも毎回ほぼ全回復し、lastSessionEndAtも更新されて
+// 減衰の36時間カウントダウンが再スタートしてしまう(=「あんまり勉強してなくても
+// 元気度が下がらない」というフィードバックの実質原因)。5に下げ、素の減衰が
+// 体感できるようにする(30分勉強すれば+65回復するので、ちゃんと勉強した分の
+// ご褒美感は変わらない)。
+export const START_BONUS = 5; // セッション開始の瞬間に即時加算
 export const PER_MINUTE_GAIN = 2; // 勉強1分につき加算
 
 const DECAY_GRACE_MS = 12 * 60 * 60 * 1000; // 直近セッション終了から12時間は維持

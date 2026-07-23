@@ -27,8 +27,19 @@ import {
   FlowerCrown,
   HairRibbon,
   StarClip,
+  SunflowerPin,
+  Headphones,
+  StrawberryCap,
+  StrawHat,
+  WizardHat,
+  TinyCrown,
+  RedScarf,
+  TinyApron,
+  SailorCollar,
+  FluffyCape,
+  DotPajama,
 } from "./RabbitParts";
-import { isAccessoryId, type AccessoryId } from "@/lib/shop";
+import { isAccessoryId, isOutfitId, type AccessoryId, type OutfitId } from "@/lib/shop";
 
 export type RabbitProps = {
   energy: number;
@@ -37,6 +48,7 @@ export type RabbitProps = {
   size?: "sm" | "md" | "lg";
   celebrate?: boolean;
   equippedItem?: string | null;
+  equippedOutfit?: string | null;
 };
 
 const ACCESSORY_COMPONENTS: Record<AccessoryId, () => React.JSX.Element> = {
@@ -46,11 +58,31 @@ const ACCESSORY_COMPONENTS: Record<AccessoryId, () => React.JSX.Element> = {
   flower_crown: FlowerCrown,
   hair_ribbon: HairRibbon,
   star_clip: StarClip,
+  sunflower_pin: SunflowerPin,
+  headphones: Headphones,
+  strawberry_cap: StrawberryCap,
+  straw_hat: StrawHat,
+  wizard_hat: WizardHat,
+  tiny_crown: TinyCrown,
+};
+
+const OUTFIT_COMPONENTS: Record<OutfitId, () => React.JSX.Element> = {
+  red_scarf: RedScarf,
+  tiny_apron: TinyApron,
+  sailor_collar: SailorCollar,
+  fluffy_cape: FluffyCape,
+  dot_pajama: DotPajama,
 };
 
 function Accessory({ itemId }: { itemId?: string | null }) {
   if (!isAccessoryId(itemId)) return null;
   const Component = ACCESSORY_COMPONENTS[itemId];
+  return <Component />;
+}
+
+function Outfit({ itemId }: { itemId?: string | null }) {
+  if (!isOutfitId(itemId)) return null;
+  const Component = OUTFIT_COMPONENTS[itemId];
   return <Component />;
 }
 
@@ -94,6 +126,7 @@ export default function Rabbit({
   size = "md",
   celebrate = false,
   equippedItem = null,
+  equippedOutfit = null,
 }: RabbitProps) {
   const stage = energyStage(energy);
   const config = STAGE_CONFIG[stage];
@@ -152,6 +185,7 @@ export default function Rabbit({
                 <Tail bodyFill={BODY_FILL} />
                 <path d={BODY_PATH} fill={BODY_FILL} stroke={PALETTE.charcoal} strokeWidth={5.5} strokeLinejoin="round" />
                 <Paws bodyFill={BODY_FILL} />
+                <Outfit itemId={equippedOutfit} />
                 <Ribbon color={ribbonHex} />
                 {detailed && config.showBlanket && <Blanket />}
                 <Blush />

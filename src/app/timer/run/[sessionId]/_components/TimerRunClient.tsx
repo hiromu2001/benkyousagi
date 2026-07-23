@@ -47,6 +47,7 @@ type Props = {
   rabbitName: string;
   ribbonColor: RibbonColor;
   equippedItem: string | null;
+  equippedOutfit: string | null;
   baselineEnergy: number;
 };
 
@@ -74,6 +75,7 @@ export default function TimerRunClient({
   rabbitName,
   ribbonColor,
   equippedItem,
+  equippedOutfit,
   baselineEnergy,
 }: Props) {
   const [engineState, dispatch] = useReducer(
@@ -250,6 +252,7 @@ export default function TimerRunClient({
         rabbitName={rabbitName}
         ribbonColor={ribbonColor}
         equippedItem={equippedItem}
+        equippedOutfit={equippedOutfit}
         energy={optimisticEnergy}
         earnedCoins={optimisticCoins}
       />
@@ -278,6 +281,7 @@ export default function TimerRunClient({
         rabbitName={rabbitName}
         ribbonColor={ribbonColor}
         equippedItem={equippedItem}
+        equippedOutfit={equippedOutfit}
         energy={optimisticEnergy}
         celebrate={celebrate}
         onPause={handlePause}
@@ -290,6 +294,7 @@ export default function TimerRunClient({
           rabbitName={rabbitName}
           ribbonColor={ribbonColor}
           equippedItem={equippedItem}
+          equippedOutfit={equippedOutfit}
           energy={optimisticEnergy}
           onContinue={() => dispatch({ type: "DIALOG_CONTINUE", nowMs: Date.now() })}
           onEnd={() => dispatch({ type: "REQUEST_END", nowMs: Date.now() })}

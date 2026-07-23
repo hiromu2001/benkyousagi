@@ -16,12 +16,14 @@ export function NameEditClient({
   initialRibbonColor,
   energy,
   equippedItem,
+  equippedOutfit,
 }: {
   initialRabbitName: string;
   initialDisplayName: string;
   initialRibbonColor: RibbonColor;
   energy: number;
   equippedItem: string | null;
+  equippedOutfit: string | null;
 }) {
   const [rabbitName, setRabbitName] = useState(initialRabbitName);
   const [displayName, setDisplayName] = useState(initialDisplayName);
@@ -56,6 +58,7 @@ export function NameEditClient({
           name={rabbitName || "(なまえを いれてね)"}
           ribbonColor={ribbonColor}
           equippedItem={equippedItem}
+          equippedOutfit={equippedOutfit}
           size="md"
         />
       </div>

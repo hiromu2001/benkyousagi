@@ -543,3 +543,243 @@ export function StarClip() {
     />
   );
 }
+
+// アクセサリー第3弾(2026-07-23追加)。
+
+function SunflowerPetals({ cx, cy }: { cx: number; cy: number }) {
+  const petals = Array.from({ length: 8 }, (_, i) => {
+    const ang = (i / 8) * Math.PI * 2;
+    const px = cx + Math.cos(ang) * 6;
+    const py = cy + Math.sin(ang) * 6;
+    return <ellipse key={i} cx={px} cy={py} rx={4.4} ry={3} fill={PALETTE.apricot} stroke={PALETTE.charcoal} strokeWidth={1.2} transform={`rotate(${(ang * 180) / Math.PI} ${px} ${py})`} />;
+  });
+  return (
+    <g>
+      {petals}
+      <circle cx={cx} cy={cy} r={4.5} fill={PALETTE.pinkDeep} stroke={PALETTE.charcoal} strokeWidth={1.2} />
+    </g>
+  );
+}
+
+export function SunflowerPin() {
+  return <SunflowerPetals cx={152} cy={96} />;
+}
+
+export function Headphones() {
+  return (
+    <g>
+      <path
+        d="M85,92 C85,58 100,42 120,42 C140,42 155,58 155,92"
+        fill="none"
+        stroke={PALETTE.charcoal}
+        strokeWidth={7}
+        strokeLinecap="round"
+      />
+      <ellipse cx={83} cy={116} rx={11} ry={17} fill={PALETTE.lavender} stroke={PALETTE.charcoal} strokeWidth={3.5} />
+      <ellipse cx={157} cy={116} rx={11} ry={17} fill={PALETTE.lavender} stroke={PALETTE.charcoal} strokeWidth={3.5} />
+    </g>
+  );
+}
+
+export function StrawberryCap() {
+  return (
+    <g>
+      <path
+        d="M88,88 C84,58 98,40 120,40 C142,40 156,58 152,88 C128,76 108,76 88,88 Z"
+        fill={PALETTE.pinkDeep}
+        stroke={PALETTE.charcoal}
+        strokeWidth={4}
+        strokeLinejoin="round"
+      />
+      <circle cx={104} cy={62} r={2.2} fill={PALETTE.milk} />
+      <circle cx={120} cy={54} r={2.2} fill={PALETTE.milk} />
+      <circle cx={136} cy={62} r={2.2} fill={PALETTE.milk} />
+      <circle cx={112} cy={74} r={2.2} fill={PALETTE.milk} />
+      <circle cx={128} cy={74} r={2.2} fill={PALETTE.milk} />
+      <path
+        d="M120,40 C114,32 118,24 120,20 C122,24 126,32 120,40 Z"
+        fill={PALETTE.mint}
+        stroke={PALETTE.charcoal}
+        strokeWidth={2.5}
+        strokeLinejoin="round"
+      />
+    </g>
+  );
+}
+
+export function StrawHat() {
+  return (
+    <g>
+      <ellipse cx={120} cy={78} rx={54} ry={13} fill={PALETTE.apricot} stroke={PALETTE.charcoal} strokeWidth={4} />
+      <path
+        d="M96,78 C96,52 106,38 120,38 C134,38 144,52 144,78 Z"
+        fill={PALETTE.apricot}
+        stroke={PALETTE.charcoal}
+        strokeWidth={4}
+        strokeLinejoin="round"
+      />
+      <path d="M97,68 L143,68" stroke={PALETTE.pinkDeep} strokeWidth={5} strokeLinecap="round" />
+    </g>
+  );
+}
+
+export function WizardHat() {
+  return (
+    <g>
+      <path
+        d="M90,86 C90,86 108,32 118,18 C122,12 128,14 130,20 C136,38 148,80 148,80 C124,68 108,72 90,86 Z"
+        fill={PALETTE.lavender}
+        stroke={PALETTE.charcoal}
+        strokeWidth={4}
+        strokeLinejoin="round"
+      />
+      <ellipse cx={119} cy={86} rx={31} ry={9} fill={PALETTE.lavender} stroke={PALETTE.charcoal} strokeWidth={3.5} />
+      <path d={starPath(133, 34, 2.6)} fill={PALETTE.milk} />
+      <path d={starPath(120, 52, 1.8)} fill={PALETTE.milk} />
+    </g>
+  );
+}
+
+function CrownGem({ cx, cy, fill }: { cx: number; cy: number; fill: string }) {
+  return <circle cx={cx} cy={cy} r={3.4} fill={fill} stroke={PALETTE.charcoal} strokeWidth={1.4} />;
+}
+
+export function TinyCrown() {
+  return (
+    <g transform="translate(120 68)">
+      <path
+        d="M-26,10 L-26,-6 L-13,4 L0,-16 L13,4 L26,-6 L26,10 Z"
+        fill={PALETTE.apricot}
+        stroke={PALETTE.charcoal}
+        strokeWidth={3.5}
+        strokeLinejoin="round"
+      />
+      <CrownGem cx={-13} cy={0} fill={PALETTE.pinkDeep} />
+      <CrownGem cx={0} cy={-8} fill={PALETTE.mint} />
+      <CrownGem cx={13} cy={0} fill={PALETTE.lavender} />
+    </g>
+  );
+}
+
+// おようふく「からだ」スロット(2026-07-23追加)。装備スロットはequippedOutfitIdの1枠のみ。
+// 体パス(BODY_PATH, y:76-212)の上に描画し、あたま・かおアクセサリーとは独立して同時装備できる。
+// Rabbit.tsx側で「体→おようふく→リボン→ほっぺ/はな/め/くち→あたまアクセサリー」の順に描画する。
+
+export function RedScarf() {
+  return (
+    <g>
+      <path
+        d="M78,148 C78,138 162,138 162,148 C162,158 78,158 78,148 Z"
+        fill={PALETTE.pinkDeep}
+        stroke={PALETTE.charcoal}
+        strokeWidth={3.5}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M92,154 C88,168 84,182 90,194 L102,188 C98,176 98,164 100,154 Z"
+        fill={PALETTE.pinkDeep}
+        stroke={PALETTE.charcoal}
+        strokeWidth={3}
+        strokeLinejoin="round"
+      />
+    </g>
+  );
+}
+
+export function TinyApron() {
+  return (
+    <g>
+      <path
+        d="M92,158 C92,150 148,150 148,158 L142,206 C128,212 112,212 98,206 Z"
+        fill={PALETTE.milk}
+        stroke={PALETTE.charcoal}
+        strokeWidth={3.5}
+        strokeLinejoin="round"
+      />
+      <rect x={109} y={172} width={22} height={16} rx={3} fill={PALETTE.pink} stroke={PALETTE.charcoal} strokeWidth={2} />
+      <path
+        d="M112,150 C112,144 128,144 128,150"
+        fill="none"
+        stroke={PALETTE.pinkDeep}
+        strokeWidth={3}
+        strokeLinecap="round"
+      />
+    </g>
+  );
+}
+
+export function SailorCollar() {
+  return (
+    <g>
+      <path
+        d="M84,150 C100,164 108,168 120,158 C132,168 140,164 156,150 L148,168 C132,180 108,180 92,168 Z"
+        fill={PALETTE.milk}
+        stroke={PALETTE.charcoal}
+        strokeWidth={3.5}
+        strokeLinejoin="round"
+      />
+      <path d="M92,156 L104,163" stroke={PALETTE.lavender} strokeWidth={2.5} strokeLinecap="round" />
+      <path d="M148,156 L136,163" stroke={PALETTE.lavender} strokeWidth={2.5} strokeLinecap="round" />
+      <path
+        d="M120,158 L112,176 L120,186 L128,176 Z"
+        fill={PALETTE.pinkDeep}
+        stroke={PALETTE.charcoal}
+        strokeWidth={2.5}
+        strokeLinejoin="round"
+      />
+    </g>
+  );
+}
+
+export function FluffyCape() {
+  const bumps = Array.from({ length: 7 }, (_, i) => 66 + i * 15);
+  return (
+    <g>
+      <path
+        d="M70,150 C70,140 170,140 170,150 L166,206 L74,206 Z"
+        fill={PALETTE.pink}
+        opacity={0.92}
+        stroke={PALETTE.charcoal}
+        strokeWidth={3.5}
+        strokeLinejoin="round"
+      />
+      {bumps.map((cx, i) => (
+        <circle key={i} cx={cx} cy={206} r={7} fill={PALETTE.pink} opacity={0.92} stroke={PALETTE.charcoal} strokeWidth={2.5} />
+      ))}
+      <path
+        d="M100,148 C108,142 132,142 140,148"
+        fill="none"
+        stroke={PALETTE.pinkDeep}
+        strokeWidth={4}
+        strokeLinecap="round"
+      />
+    </g>
+  );
+}
+
+export function DotPajama() {
+  const dots = [
+    { cx: 92, cy: 172 },
+    { cx: 116, cy: 182 },
+    { cx: 140, cy: 172 },
+    { cx: 104, cy: 198 },
+    { cx: 130, cy: 198 },
+    { cx: 118, cy: 158 },
+  ];
+  return (
+    <g>
+      <path
+        d="M90,156 C90,150 150,150 150,156 L146,208 C128,214 112,214 94,208 Z"
+        fill={PALETTE.mint}
+        stroke={PALETTE.charcoal}
+        strokeWidth={3.5}
+        strokeLinejoin="round"
+      />
+      {dots.map((d, i) => (
+        <circle key={i} cx={d.cx} cy={d.cy} r={3.2} fill={PALETTE.milk} opacity={0.85} />
+      ))}
+      <circle cx={120} cy={162} r={2.4} fill={PALETTE.charcoalSoft} />
+      <circle cx={120} cy={176} r={2.4} fill={PALETTE.charcoalSoft} />
+    </g>
+  );
+}

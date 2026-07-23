@@ -41,6 +41,9 @@ export default async function ShopPage() {
           energy={energy}
           initialCoinBalance={user.coinBalance}
           initialEquippedItem={rabbit?.equippedItemId ?? null}
+          initialEquippedOutfit={rabbit?.equippedOutfitId ?? null}
+          initialRoomLeftItemId={rabbit?.roomLeftItemId ?? null}
+          initialRoomBackItemId={rabbit?.roomBackItemId ?? null}
           initialOwnedItemIds={ownedItems.map((i) => i.itemId)}
         />
       </div>

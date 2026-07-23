@@ -8,6 +8,7 @@ type Props = {
   rabbitName: string;
   ribbonColor: RibbonColor;
   equippedItem: string | null;
+  equippedOutfit: string | null;
   energy: number;
   onContinue: () => void;
   onEnd: () => void;
@@ -18,6 +19,7 @@ export default function InactivityDialog({
   rabbitName,
   ribbonColor,
   equippedItem,
+  equippedOutfit,
   energy,
   onContinue,
   onEnd,
@@ -35,7 +37,14 @@ export default function InactivityDialog({
           transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 0.6 }}
           className="mx-auto w-fit"
         >
-          <Rabbit energy={energy} name={rabbitName} ribbonColor={ribbonColor} equippedItem={equippedItem} size="md" />
+          <Rabbit
+            energy={energy}
+            name={rabbitName}
+            ribbonColor={ribbonColor}
+            equippedItem={equippedItem}
+            equippedOutfit={equippedOutfit}
+            size="md"
+          />
         </motion.div>
 
         <p className="mt-4 text-lg font-bold text-charcoal">

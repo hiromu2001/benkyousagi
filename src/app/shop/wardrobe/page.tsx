@@ -34,6 +34,9 @@ export default async function WardrobePage() {
           ribbonColor={rabbit?.ribbonColor ?? "CREAM"}
           energy={energy}
           initialEquippedItem={rabbit?.equippedItemId ?? null}
+          initialEquippedOutfit={rabbit?.equippedOutfitId ?? null}
+          initialRoomLeftItemId={rabbit?.roomLeftItemId ?? null}
+          initialRoomBackItemId={rabbit?.roomBackItemId ?? null}
           ownedItemIds={ownedItems.map((i) => i.itemId)}
         />
       </div>

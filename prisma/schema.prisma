@@ -74,9 +74,18 @@ model Rabbit {
   lastSessionEndAt  DateTime?
   onboardedAt       DateTime? // nullの間は初回オンボーディング(命名・リボン色・世界観説明)を表示する
 
-  // REQUIREMENTS.md 3-7節: 装備中アクセサリーの商品コード(未装備はnull)。
+  // REQUIREMENTS.md 3-7節: 装備中アクセサリー(あたま・かお)の商品コード(未装備はnull)。
   // 所持アクセサリー(OwnedItem)に存在するコードのみ許可(アプリ側で検証)。
   equippedItemId String?
+
+  // REQUIREMENTS.md 3-7節(2026-07-23拡張): 装備中の「おようふく」の商品コード。
+  // equippedItemIdとは別スロットのため同時装備できる(あたま・かお / からだ)。
+  equippedOutfitId String?
+
+  // REQUIREMENTS.md 3-7節(2026-07-23拡張): ホーム画面の「おへや」に置く家具の商品コード。
+  // 左・奥の2枠のみ(スロットごとに置けるのは1つ、商品側のslotと一致する必要がある)。
+  roomLeftItemId String?
+  roomBackItemId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
