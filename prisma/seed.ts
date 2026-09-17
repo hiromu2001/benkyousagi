@@ -27,7 +27,7 @@ async function upsertUser(name: string | undefined, pin: string | undefined, fal
       rabbit: { create: { name: displayName } },
     },
   });
-  console.log(`seeded user: ${user.displayName} (id=${user.id})`);
+  console.log(`ユーザーを作成・更新しました: ${user.displayName} (id=${user.id})`);
 }
 
 async function main() {
