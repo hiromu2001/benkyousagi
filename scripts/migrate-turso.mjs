@@ -42,12 +42,12 @@ for (const id of migrationIds) {
   const sql = readFileSync(path.join(migrationsDir, id, "migration.sql"), "utf-8");
   await client.executeMultiple(sql);
   await client.execute({ sql: "INSERT INTO _turso_migrations (id) VALUES (?)", args: [id] });
-  console.log(`applied migration: ${id}`);
+  console.log(`マイグレーションを適用しました: ${id}`);
   appliedCount++;
 }
 
 if (appliedCount === 0) {
-  console.log("No pending migrations to apply.");
+  console.log("未適用のマイグレーションはありません。");
 }
 
 client.close();
